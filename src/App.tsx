@@ -5,7 +5,8 @@ import { Activity, CheckCircle, Crosshair, TrendingUp, AlertTriangle } from 'luc
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+// If VITE_API_URL is undefined, default to empty string so it uses relative paths (Vercel Proxy)
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 export default function App() {
   const [openTrades, setOpenTrades] = useState<any[]>([]);
