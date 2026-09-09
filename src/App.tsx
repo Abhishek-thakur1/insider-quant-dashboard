@@ -210,11 +210,11 @@ export default function App() {
         </div>
 
         {/* Middle Section: Active Signals & Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 h-80">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 h-[400px]">
           
           {/* Active Signals List */}
-          <div className="lg:col-span-2 glass-card p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
+          <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-0">
+            <div className="flex justify-between items-center mb-6 shrink-0">
               <h2 className="text-lg font-semibold text-white">Active Positions</h2>
               <div className="flex gap-2">
                 <button className="px-4 py-1.5 bg-[#1c1c1e] text-blue-400 text-xs font-semibold rounded-lg border border-blue-500/30">Live Market</button>
@@ -222,7 +222,7 @@ export default function App() {
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto min-h-0 pr-2 space-y-3 custom-scrollbar">
               <AnimatePresence>
                 {openTrades.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-gray-500">
@@ -300,11 +300,11 @@ export default function App() {
         </div>
 
         {/* Bottom Section: Chart & Logs */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-72">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[350px]">
           
           {/* Performance Chart */}
-          <div className="lg:col-span-2 glass-card p-6 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
+          <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-0">
+            <div className="flex justify-between items-center mb-4 shrink-0">
               <h2 className="text-lg font-semibold text-white">Performance</h2>
               <button className="text-gray-500 hover:text-white"><MoreHorizontal className="w-5 h-5" /></button>
             </div>
@@ -337,11 +337,11 @@ export default function App() {
           </div>
 
           {/* System Logs */}
-          <div className="glass-card p-6 flex flex-col">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <div className="glass-card p-6 flex flex-col min-h-0">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 shrink-0">
               <TerminalSquare className="w-5 h-5 text-gray-400" /> System Logs
             </h2>
-            <div className="flex-1 bg-[#141416] border border-[#222225] rounded-xl p-4 overflow-y-auto custom-scrollbar font-mono text-[11px] text-gray-400 space-y-2">
+            <div className="flex-1 bg-[#141416] border border-[#222225] rounded-xl p-4 overflow-y-auto custom-scrollbar font-mono text-[11px] text-gray-400 space-y-2 min-h-0">
               <div className="text-blue-400">[09:15:00] Engine booted successfully.</div>
               <div className="text-blue-400">[09:15:02] Connected to Fyers Data Servers.</div>
               <div className="text-gray-500">[09:16:45] Subscribed ATM options...</div>
