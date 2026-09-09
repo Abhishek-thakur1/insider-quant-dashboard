@@ -25,26 +25,72 @@ export default function App() {
   const [history, setHistory] = useState<any[]>([]);
   const [pnl, setPnl] = useState(0);
 
-  const fetchData = async () => {
+  const [livePnlUpdates, setLivePnlUpdates] = useState<Record<string, number>>({});
+
+  const fetchInitialData = async () => {
     try {
-      const [openRes, histRes, pnlRes] = await Promise.all([
-        axios.get(`${API_URL}/api/trades/open`),
-        axios.get(`${API_URL}/api/trades/history`),
-        axios.get(`${API_URL}/api/pnl/daily`)
+      const [todayRes, histRes] = await Promise.all([
+        axios.get(`${API_URL}/api/today`),
+        axios.get(`${API_URL}/api/trades/history`)
       ]);
-      setOpenTrades(openRes.data.data || []);
+      
+      setOpenTrades(todayRes.data.openTrades || []);
+      setPnl(todayRes.data.realizedPnl || 0);
       setHistory(histRes.data.data || []);
-      setPnl(pnlRes.data.pnl || 0);
     } catch (err) {
       console.error("API Fetch Error:", err);
     }
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 2000);
-    return () => clearInterval(interval);
+    fetchInitialData();
+
+    // Setup SSE connection
+    const sse = new EventSource(`${API_URL}/api/stream`);
+
+    sse.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'signal_event') {
+          // A trade opened or closed
+          if (payload.data.status === 'CLOSED' || payload.data.exitPrice) {
+            // Remove from open trades
+            setOpenTrades(prev => prev.filter(t => t.id !== payload.data.id));
+            // Add to history
+            setHistory(prev => [payload.data, ...prev]);
+            // Update Realized PnL locally until next fetch
+            if (payload.data.pnl) {
+                setPnl(prev => prev + payload.data.pnl);
+            }
+          } else {
+            // It's a new OPEN trade
+            setOpenTrades(prev => [payload.data, ...prev]);
+          }
+        } else if (payload.type === 'pnl_update') {
+          // Live tick PnL update
+          setLivePnlUpdates(prev => ({
+            ...prev,
+            [payload.data.symbol]: payload.data.unrealizedPnl
+          }));
+        }
+      } catch (err) {
+        console.error("Error parsing SSE message:", err);
+      }
+    };
+
+    sse.onerror = () => {
+      console.warn("SSE Connection error, retrying...");
+      // Re-fetch initial state to heal any missed events during disconnect
+      fetchInitialData();
+    };
+
+    return () => sse.close();
   }, []);
+
+  // Compute Unrealized PnL from the live updates
+  const totalUnrealizedPnl = openTrades.reduce((acc, trade) => {
+    return acc + (livePnlUpdates[trade.symbol] || 0);
+  }, 0);
 
   const totalTrades = history.length;
   const wins = history.filter(t => t.exitReason === 'TARGET').length;
@@ -162,13 +208,16 @@ export default function App() {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-400">Daily PnL</div>
-                  <div className="text-xs text-gray-500">Realized</div>
+                  <div className="text-xs flex gap-2">
+                    <span className="text-gray-500">Realized</span>
+                    <span className="text-blue-500 font-semibold border-l border-[#333] pl-2">Unrealized: ₹{totalUnrealizedPnl.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
               <button className="text-gray-500 hover:text-white"><MoreHorizontal className="w-5 h-5" /></button>
             </div>
             <div className={`text-3xl font-bold font-mono tracking-tight ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              ₹{pnl.toFixed(2)}
+              ₹{pnl.toFixed(2)} <span className="text-sm font-normal text-gray-500 ml-1">Total: ₹{(pnl + totalUnrealizedPnl).toFixed(2)}</span>
             </div>
           </div>
 
@@ -250,12 +299,25 @@ export default function App() {
                     
                     <div className="text-right">
                       <div className="text-sm font-bold text-white font-mono">₹{trade.entryPrice}</div>
-                      <div className="text-xs text-gray-500">Entry Price</div>
+                      <div className="text-xs text-gray-500">Entry</div>
                     </div>
                     
                     <div className="text-right hidden sm:block">
                       <div className="text-sm font-bold text-green-400 font-mono">₹{trade.target}</div>
                       <div className="text-xs text-gray-500">Target</div>
+                    </div>
+
+                    <div className="text-right">
+                      {livePnlUpdates[trade.symbol] !== undefined ? (
+                        <>
+                          <div className={`text-sm font-bold font-mono ${livePnlUpdates[trade.symbol] >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {livePnlUpdates[trade.symbol] >= 0 ? '+' : ''}₹{livePnlUpdates[trade.symbol].toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-blue-500 font-semibold animate-pulse">LIVE PnL</div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-gray-500">Waiting for tick...</div>
+                      )}
                     </div>
                     
                     <button className="px-4 py-2 bg-[#222225] hover:bg-[#2a2a2e] text-xs font-semibold text-white rounded-lg transition-colors border border-[#333]">
