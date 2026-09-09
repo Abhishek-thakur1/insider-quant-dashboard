@@ -63,8 +63,8 @@ export default function App() {
   return (
     <div className="flex h-screen bg-[#0f0f10] text-gray-300 font-sans overflow-hidden">
       
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#141416] border-r border-[#222225] flex flex-col p-6">
+      {/* Sidebar - Hidden on mobile */}
+      <aside className="hidden md:flex w-64 bg-[#141416] border-r border-[#222225] flex-col p-6">
         <div className="flex items-center gap-3 mb-10 text-white">
           <Activity className="w-8 h-8 text-blue-500" />
           <h1 className="text-xl font-bold tracking-wide">IQ Engine</h1>
@@ -117,8 +117,8 @@ export default function App() {
       <main className="flex-1 flex flex-col p-8 overflow-y-auto custom-scrollbar">
         
         {/* Top Header */}
-        <header className="flex justify-between items-center mb-8">
-          <div className="relative w-96">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input 
               type="text" 
@@ -127,7 +127,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
             <div className="flex items-center gap-3 bg-[#141416] border border-[#222225] px-4 py-2 rounded-xl">
               <span className="text-lg font-bold text-white">{format(new Date(), 'dd')}</span>
               <div className="flex flex-col">
@@ -210,10 +210,10 @@ export default function App() {
         </div>
 
         {/* Middle Section: Active Signals & Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 h-[400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 h-auto lg:h-[400px]">
           
           {/* Active Signals List */}
-          <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-0">
+          <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-[400px] lg:min-h-0">
             <div className="flex justify-between items-center mb-6 shrink-0">
               <h2 className="text-lg font-semibold text-white">Active Positions</h2>
               <div className="flex gap-2">
@@ -300,10 +300,10 @@ export default function App() {
         </div>
 
         {/* Bottom Section: Chart & Logs */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[350px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[350px] mb-8">
           
           {/* Performance Chart */}
-          <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-0">
+          <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-[300px] lg:min-h-0">
             <div className="flex justify-between items-center mb-4 shrink-0">
               <h2 className="text-lg font-semibold text-white">Performance</h2>
               <button className="text-gray-500 hover:text-white"><MoreHorizontal className="w-5 h-5" /></button>
@@ -337,7 +337,7 @@ export default function App() {
           </div>
 
           {/* System Logs */}
-          <div className="glass-card p-6 flex flex-col min-h-0">
+          <div className="glass-card p-6 flex flex-col min-h-[300px] lg:min-h-0">
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 shrink-0">
               <TerminalSquare className="w-5 h-5 text-gray-400" /> System Logs
             </h2>
