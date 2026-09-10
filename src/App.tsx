@@ -90,16 +90,47 @@ export default function App() {
   const [signalsFilter, setSignalsFilter] = useState<'live' | 'filtered'>('live');
   const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
 
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedDetector, setSelectedDetector] = useState<string>('ALL');
+  const [heatmapData, setHeatmapData] = useState<{date: string, count: number}[]>([]);
+
+  const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
+
   const fetchInitialData = async () => {
     try {
-      const [todayRes, histRes] = await Promise.all([
-        axios.get(`${API_URL}/api/today`),
-        axios.get(`${API_URL}/api/trades/history`)
+      let url = `${API_URL}/api/trades/history?date=${selectedDate}`;
+      if (selectedDetector !== 'ALL') {
+        url += `&detector=${selectedDetector}`;
+      }
+
+      const [histRes, heatmapRes] = await Promise.all([
+        axios.get(url),
+        axios.get(`${API_URL}/api/trades/heatmap`).catch(() => ({ data: { data: [] } }))
       ]);
       
-      setOpenTrades(todayRes.data.openTrades || []);
-      setPnl(todayRes.data.realizedPnl || 0);
       setHistory(histRes.data.data || []);
+      if (heatmapRes.data?.data) {
+        setHeatmapData(heatmapRes.data.data);
+      }
+
+      // If today, also fetch open trades and daily pnl
+      if (isToday) {
+        const todayRes = await axios.get(`${API_URL}/api/today`);
+        setOpenTrades(todayRes.data.openTrades || []);
+        
+        // Only set daily PnL from redis if we aren't filtering by detector
+        if (selectedDetector === 'ALL') {
+          setPnl(todayRes.data.realizedPnl || 0);
+        } else {
+          // Compute PnL from filtered history
+          const filteredPnl = (histRes.data.data || []).reduce((acc: number, t: any) => acc + (t.pnl || 0), 0);
+          setPnl(filteredPnl);
+        }
+      } else {
+        setOpenTrades([]); // No open trades for past dates
+        const historicalPnl = (histRes.data.data || []).reduce((acc: number, t: any) => acc + (t.pnl || 0), 0);
+        setPnl(historicalPnl);
+      }
     } catch (err) {
       console.error("API Fetch Error:", err);
     }
@@ -107,30 +138,33 @@ export default function App() {
 
   useEffect(() => {
     fetchInitialData();
+  }, [selectedDate, selectedDetector]);
 
-    // Setup SSE connection
+  useEffect(() => {
+    // Only connect SSE if viewing Today
+    if (!isToday) return;
+
     const sse = new EventSource(`${API_URL}/api/stream`);
 
     sse.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === 'signal_event') {
-          // A trade opened or closed
+          // If filtering by detector, skip if no match
+          if (selectedDetector !== 'ALL' && payload.data.detectorName !== selectedDetector) {
+            return;
+          }
+
           if (payload.data.status === 'CLOSED' || payload.data.exitPrice) {
-            // Remove from open trades
             setOpenTrades(prev => prev.filter(t => t.id !== payload.data.id));
-            // Add to history
             setHistory(prev => [payload.data, ...prev]);
-            // Update Realized PnL locally until next fetch
             if (payload.data.pnl) {
                 setPnl(prev => prev + payload.data.pnl);
             }
           } else {
-            // It's a new OPEN trade
             setOpenTrades(prev => [payload.data, ...prev]);
           }
         } else if (payload.type === 'pnl_update') {
-          // Live tick PnL update
           setLivePnlUpdates(prev => ({
             ...prev,
             [payload.data.symbol]: payload.data.unrealizedPnl
@@ -143,21 +177,30 @@ export default function App() {
 
     sse.onerror = () => {
       console.warn("SSE Connection error, retrying...");
-      // Re-fetch initial state to heal any missed events during disconnect
-      fetchInitialData();
+      // Heal state on disconnect only if today
+      if (isToday) fetchInitialData();
     };
 
     return () => sse.close();
-  }, []);
+  }, [isToday, selectedDetector]);
 
-  // Compute Unrealized PnL from the live updates
-  const totalUnrealizedPnl = openTrades.reduce((acc, trade) => {
+  // Compute Unrealized PnL from the live updates (only for today)
+  const totalUnrealizedPnl = isToday ? openTrades.reduce((acc, trade) => {
     return acc + (livePnlUpdates[trade.symbol] || 0);
-  }, 0);
+  }, 0) : 0;
 
   const totalTrades = history.length;
-  const wins = history.filter(t => t.exitReason === 'TARGET').length;
+  const wins = history.filter(t => t.exitReason === 'TARGET' || (t.pnl && t.pnl > 0)).length;
   const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : '0.0';
+
+  // Extract unique detectors from history for the dropdown
+  const uniqueDetectors = Array.from(new Set(history.map(t => t.detectorName).filter(Boolean)));
+
+  useEffect(() => {
+    if (!isToday && signalsFilter === 'live') {
+      setSignalsFilter('filtered');
+    }
+  }, [isToday]);
 
   let cumulative = 0;
   const chartData = [...history].reverse().map(t => {
@@ -176,7 +219,7 @@ export default function App() {
       <aside className="hidden md:flex w-64 bg-[#141416] border-r border-[#222225] flex-col p-6">
         <div className="flex items-center gap-3 mb-10 text-white">
           <Activity className="w-8 h-8 text-blue-500" />
-          <h1 className="text-xl font-bold tracking-wide">IQ Engine</h1>
+          <h1 className="text-xl font-bold tracking-wide">Ninefifteen</h1>
         </div>
 
         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">General</div>
@@ -209,17 +252,6 @@ export default function App() {
             <span className="font-medium">Logout</span>
           </a>
         </nav>
-
-        <div className="glass-card p-5 mt-auto relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 to-transparent"></div>
-          <div className="relative z-10 text-center">
-            <div className="text-sm font-bold text-white mb-2">Automated Execution</div>
-            <p className="text-xs text-gray-400 mb-4">Upgrade to real money execution layer.</p>
-            <button className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors">
-              Deploy API Keys
-            </button>
-          </div>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -236,12 +268,29 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
-            <div className="flex items-center gap-3 bg-[#141416] border border-[#222225] px-4 py-2 rounded-xl">
-              <span className="text-lg font-bold text-white">{format(new Date(), 'dd')}</span>
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-gray-400 uppercase">{format(new Date(), 'MMM, yyyy')}</span>
-                <span className="text-[10px] text-gray-500">{format(new Date(), 'EEEE')}</span>
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
+            
+            <div className="flex items-center gap-3">
+              <select 
+                value={selectedDetector}
+                onChange={(e) => setSelectedDetector(e.target.value)}
+                className="bg-[#141416] border border-[#222225] rounded-xl px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="ALL">All Detectors</option>
+                {uniqueDetectors.map(d => (
+                  <option key={String(d)} value={String(d)}>{String(d)}</option>
+                ))}
+              </select>
+
+              <div className="bg-[#141416] border border-[#222225] px-4 py-2 rounded-xl flex items-center gap-3 relative">
+                <input 
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  max={format(new Date(), 'yyyy-MM-dd')}
+                  className="bg-transparent text-white font-semibold outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                />
+                {!isToday && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-[#141416]" title="Viewing Historical Data"></div>}
               </div>
             </div>
             
@@ -251,10 +300,10 @@ export default function App() {
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-900 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
-                Q
+                N
               </div>
               <div>
-                <div className="text-sm font-semibold text-white">Quant Engine</div>
+                <div className="text-sm font-semibold text-white">Ninefifteen</div>
                 <div className="text-xs text-gray-400">Paper Trading Mode</div>
               </div>
             </div>
@@ -402,31 +451,42 @@ export default function App() {
               </div>
             </div>
 
-            {/* Activity Heatmap Mock */}
+            {/* Activity Heatmap */}
             <div className="glass-card p-6 flex flex-col">
               <h2 className="text-lg font-semibold text-white mb-6">Trading Activity</h2>
               <div className="flex-1 flex flex-col justify-center">
-                <div className="grid grid-cols-5 gap-2">
-                  {Array.from({length: 20}).map((_, i) => {
-                    const intensity = Math.random();
+                <div className="grid grid-cols-7 gap-2">
+                  {heatmapData.slice(0, 28).reverse().map((dayData, i) => {
+                    const maxCount = Math.max(...heatmapData.map(d => d.count), 1);
+                    const intensity = dayData.count / maxCount;
                     let bgClass = "bg-[#1c1c1e]";
                     if (intensity > 0.8) bgClass = "bg-blue-400";
                     else if (intensity > 0.5) bgClass = "bg-blue-600";
-                    else if (intensity > 0.2) bgClass = "bg-blue-900";
+                    else if (intensity > 0.1) bgClass = "bg-blue-900";
+                    
+                    const isSelected = selectedDate === dayData.date;
                     
                     return (
-                      <div key={i} className={`h-8 rounded-md ${bgClass} border border-[#222225]`}></div>
+                      <div 
+                        key={i} 
+                        onClick={() => setSelectedDate(dayData.date)}
+                        title={`${dayData.date}: ${dayData.count} signals`}
+                        className={`h-8 rounded-md ${bgClass} ${isSelected ? 'border-2 border-white' : 'border border-[#222225]'} cursor-pointer hover:border-gray-400 transition-all`}
+                      ></div>
                     )
                   })}
+                  {heatmapData.length === 0 && Array.from({length: 28}).map((_, i) => (
+                    <div key={i} className="h-8 rounded-md bg-[#1c1c1e] border border-[#222225]"></div>
+                  ))}
                 </div>
                 <div className="flex justify-between items-center mt-6">
                   <div>
-                    <div className="text-xs text-gray-500">Today</div>
-                    <div className="text-sm font-bold text-white">{totalTrades} signals</div>
+                    <div className="text-xs text-gray-500">Selected Day</div>
+                    <div className="text-sm font-bold text-white">{heatmapData.find(d => d.date === selectedDate)?.count || 0} signals</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-gray-500">This Week</div>
-                    <div className="text-sm font-bold text-white">{totalTrades * 4 + 12} signals</div>
+                    <div className="text-xs text-gray-500">30-Day Volume</div>
+                    <div className="text-sm font-bold text-white">{heatmapData.reduce((acc, d) => acc + d.count, 0)} signals</div>
                   </div>
                 </div>
               </div>
