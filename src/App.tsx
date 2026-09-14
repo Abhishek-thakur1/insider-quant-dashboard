@@ -391,6 +391,12 @@ export default function App() {
             <div className={`text-3xl font-bold font-mono tracking-tight ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
               ₹{pnl.toFixed(2)} <span className="text-sm font-normal text-gray-500 ml-1">Total: ₹{(pnl + totalUnrealizedPnl).toFixed(2)}</span>
             </div>
+            {!isToday && new Date(selectedDate) < new Date('2026-09-14') && (
+              <div className="text-[10px] text-orange-400/80 mt-2 flex items-start gap-1 leading-tight">
+                <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                <span>Historical PnL before Sept 14, 2026 is an approximation ignoring concurrent capital constraints.</span>
+              </div>
+            )}
           </div>
 
           <div className="glass-card p-6">
