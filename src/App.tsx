@@ -411,7 +411,7 @@ export default function App() {
                       
                       <div className="text-right">
                         <div className="text-sm font-bold text-white font-mono">₹{trade.entryPrice}</div>
-                        <div className="text-xs text-gray-500">Entry</div>
+                        <div className="text-xs text-gray-500">Entry <span className="text-gray-400 font-mono">({trade.size || 100}x)</span></div>
                       </div>
                       
                       <div className="text-right hidden sm:block">
@@ -456,28 +456,36 @@ export default function App() {
               <h2 className="text-lg font-semibold text-white mb-6">Trading Activity</h2>
               <div className="flex-1 flex flex-col justify-center">
                 <div className="grid grid-cols-7 gap-2">
-                  {heatmapData.slice(0, 28).reverse().map((dayData, i) => {
+                  {(() => {
+                    const latest28 = heatmapData.slice(0, 28).reverse();
+                    const paddedHeatmap = Array.from({ length: 28 }, (_, i) => 
+                      latest28[i] || { date: '', count: -1 }
+                    );
                     const maxCount = Math.max(...heatmapData.map(d => d.count), 1);
-                    const intensity = dayData.count / maxCount;
-                    let bgClass = "bg-[#1c1c1e]";
-                    if (intensity > 0.8) bgClass = "bg-blue-400";
-                    else if (intensity > 0.5) bgClass = "bg-blue-600";
-                    else if (intensity > 0.1) bgClass = "bg-blue-900";
                     
-                    const isSelected = selectedDate === dayData.date;
-                    
-                    return (
-                      <div 
-                        key={i} 
-                        onClick={() => setSelectedDate(dayData.date)}
-                        title={`${dayData.date}: ${dayData.count} signals`}
-                        className={`h-8 rounded-md ${bgClass} ${isSelected ? 'border-2 border-white' : 'border border-[#222225]'} cursor-pointer hover:border-gray-400 transition-all`}
-                      ></div>
-                    )
-                  })}
-                  {heatmapData.length === 0 && Array.from({length: 28}).map((_, i) => (
-                    <div key={i} className="h-8 rounded-md bg-[#1c1c1e] border border-[#222225]"></div>
-                  ))}
+                    return paddedHeatmap.map((dayData, i) => {
+                      if (dayData.count === -1) {
+                        return <div key={`empty-${i}`} className="h-8 rounded-md bg-[#1c1c1e] border border-[#222225]"></div>;
+                      }
+                      
+                      const intensity = dayData.count / maxCount;
+                      let bgClass = "bg-[#1c1c1e]";
+                      if (intensity > 0.8) bgClass = "bg-blue-400";
+                      else if (intensity > 0.5) bgClass = "bg-blue-600";
+                      else if (intensity > 0.1) bgClass = "bg-blue-900";
+                      
+                      const isSelected = selectedDate === dayData.date;
+                      
+                      return (
+                        <div 
+                          key={dayData.date} 
+                          onClick={() => setSelectedDate(dayData.date)}
+                          title={`${dayData.date}: ${dayData.count} signals`}
+                          className={`h-8 rounded-md ${bgClass} ${isSelected ? 'border-2 border-white' : 'border border-[#222225]'} cursor-pointer hover:border-gray-400 transition-all`}
+                        ></div>
+                      )
+                    });
+                  })()}
                 </div>
                 <div className="flex justify-between items-center mt-6">
                   <div>
