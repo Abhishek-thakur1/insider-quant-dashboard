@@ -47,20 +47,30 @@ const TradeDetailsModal = ({ trade, onClose, livePnl }: { trade: any, onClose: (
         <div className="p-6 grid grid-cols-2 gap-6">
           <div>
             <div className="text-xs text-gray-500 mb-1">Entry Price</div>
-            <div className="text-lg font-bold text-white font-mono">₹{trade.entryPrice}</div>
+            <div className="text-lg font-bold text-white font-mono">₹{trade.entryPrice} <span className="text-sm text-gray-500">({trade.size || 100}x)</span></div>
           </div>
           <div>
             <div className="text-xs text-gray-500 mb-1">Target</div>
-            <div className="text-lg font-bold text-green-400 font-mono">₹{trade.target}</div>
+            <div className="text-lg font-bold text-green-400 font-mono">₹{trade.target || (trade.entryPrice * 1.05).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-xs text-gray-500 mb-1">Stop Loss</div>
-            <div className="text-lg font-bold text-red-400 font-mono">₹{trade.stopLoss}</div>
+            <div className="text-lg font-bold text-red-400 font-mono">₹{trade.stopLoss || (trade.entryPrice * 0.95).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-xs text-gray-500 mb-1">Status</div>
-            <div className={`text-sm font-bold uppercase ${isHistory ? 'text-gray-400' : 'text-blue-400'}`}>{isHistory ? 'Closed' : 'Active'}</div>
+            <div className={`text-sm font-bold uppercase ${isHistory ? 'text-gray-400' : 'text-blue-400'}`}>
+              {isHistory ? 'Closed' : 'Active'} • {trade.gated ? 'Gated' : 'Ungated'}
+            </div>
           </div>
+          {isHistory && trade.r_multiple !== undefined && (
+            <div>
+              <div className="text-xs text-gray-500 mb-1">R-Multiple</div>
+              <div className={`text-lg font-bold font-mono ${trade.r_multiple >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {trade.r_multiple >= 0 ? '+' : ''}{trade.r_multiple.toFixed(2)}R
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="px-6 pb-6">
@@ -193,8 +203,57 @@ export default function App() {
   const wins = history.filter(t => t.exitReason === 'TARGET' || (t.pnl && t.pnl > 0)).length;
   const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : '0.0';
 
+  // Expectancy in R
+  const rMultiples = history.filter(t => t.r_multiple !== undefined).map(t => t.r_multiple);
+  const avgR = rMultiples.length > 0 ? (rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length).toFixed(2) : '0.00';
+  const totalR = rMultiples.length > 0 ? rMultiples.reduce((a, b) => a + b, 0).toFixed(2) : '0.00';
+
   // Extract unique detectors from history for the dropdown
   const uniqueDetectors = Array.from(new Set(history.map(t => t.detectorName).filter(Boolean)));
+
+  // Win rate by detector
+  const detectorStats = uniqueDetectors.map(detector => {
+    const dTrades = history.filter(t => t.detectorName === detector);
+    const dWins = dTrades.filter(t => t.exitReason === 'TARGET' || (t.pnl && t.pnl > 0)).length;
+    const dRMultiples = dTrades.filter(t => t.r_multiple !== undefined).map(t => t.r_multiple);
+    const dTotalR = dRMultiples.reduce((a, b) => a + b, 0);
+    return {
+      detector,
+      trades: dTrades.length,
+      winRate: ((dWins / dTrades.length) * 100).toFixed(1),
+      totalR: dTotalR.toFixed(2)
+    };
+  }).sort((a, b) => Number(b.totalR) - Number(a.totalR));
+
+  const exportCsv = () => {
+    const headers = ['Symbol', 'Side', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Size', 'Entry', 'Exit', 'PnL', 'R-Multiple'];
+    const rows = history.map(t => [
+      t.symbol,
+      t.side,
+      new Date(t.timestamp).toISOString(),
+      t.exitTimestamp ? new Date(t.exitTimestamp).toISOString() : '',
+      t.detectorName,
+      t.regimeClass || 'UNIVERSAL',
+      t.gated ? 'YES' : 'NO',
+      t.size || 100,
+      t.entryPrice,
+      t.exitPrice || '',
+      t.pnl || 0,
+      t.r_multiple !== undefined ? t.r_multiple : ''
+    ]);
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(',') + "\n" 
+      + rows.map(e => e.join(',')).join("\n");
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ninefifteen_trades_${selectedDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     if (!isToday && signalsFilter === 'live') {
@@ -379,6 +438,9 @@ export default function App() {
                 <div className="flex gap-2">
                   <button onClick={() => setSignalsFilter('live')} className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${signalsFilter === 'live' ? 'bg-[#1c1c1e] text-blue-400 border-blue-500/30' : 'bg-transparent text-gray-400 border-transparent hover:text-white'}`}>Live Market</button>
                   <button onClick={() => setSignalsFilter('filtered')} className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${signalsFilter === 'filtered' ? 'bg-[#1c1c1e] text-blue-400 border-blue-500/30' : 'bg-transparent text-gray-400 border-transparent hover:text-white'}`}>Filtered</button>
+                  {signalsFilter === 'filtered' && (
+                    <button onClick={exportCsv} className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border bg-[#1c1c1e] text-gray-300 border-[#333] hover:text-white hover:border-gray-500 ml-2">Export CSV</button>
+                  )}
                 </div>
               </div>
               
@@ -539,24 +601,44 @@ export default function App() {
               </div>
             </div>
 
-            {/* System Logs */}
+            {/* Strategy Stats */}
             {currentView === 'performance' && (
               <div className="glass-card p-6 flex flex-col min-h-[300px] lg:min-h-0">
                 <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 shrink-0">
-                  <TerminalSquare className="w-5 h-5 text-gray-400" /> System Logs
+                  <TrendingUp className="w-5 h-5 text-gray-400" /> Strategy Stats
                 </h2>
-                <div className="flex-1 bg-[#141416] border border-[#222225] rounded-xl p-4 overflow-y-auto custom-scrollbar font-mono text-[11px] text-gray-400 space-y-2 min-h-0">
-                  <div className="text-blue-400">[09:15:00] Engine booted successfully.</div>
-                  <div className="text-blue-400">[09:15:02] Connected to Fyers Data Servers.</div>
-                  <div className="text-gray-500">[09:16:45] Subscribed ATM options...</div>
-                  {history.map((h, i) => (
-                    <div key={i} className="text-gray-300">
-                      [{format(new Date(h.exitTimestamp), 'HH:mm:ss')}] Closed {h.symbol} at ₹{h.pnl}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-4 bg-[#1a1a1c] border border-[#222225] rounded-xl text-center">
+                    <div className="text-xs text-gray-500 mb-1">Total Expectancy</div>
+                    <div className={`text-2xl font-bold font-mono ${Number(totalR) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {Number(totalR) >= 0 ? '+' : ''}{totalR}R
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#1a1a1c] border border-[#222225] rounded-xl text-center">
+                    <div className="text-xs text-gray-500 mb-1">Avg R per Trade</div>
+                    <div className={`text-2xl font-bold font-mono ${Number(avgR) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {Number(avgR) >= 0 ? '+' : ''}{avgR}R
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Detector Breakdown</h3>
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                  {detectorStats.map(stat => (
+                    <div key={stat.detector} className="flex justify-between items-center p-3 bg-[#1a1a1c] border border-[#222225] rounded-lg">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-white text-sm">{stat.detector.split(/(?=[A-Z])/).join(' ')}</span>
+                        <span className="text-xs text-gray-500">{stat.trades} trades</span>
+                      </div>
+                      <div className="text-right flex flex-col">
+                        <span className={`font-bold font-mono ${Number(stat.totalR) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{Number(stat.totalR) >= 0 ? '+' : ''}{stat.totalR}R</span>
+                        <span className="text-xs text-blue-400">{stat.winRate}% win</span>
+                      </div>
                     </div>
                   ))}
-                  <div className="text-gray-500 mt-2 flex items-center gap-2 animate-pulse">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Awaiting signals...
-                  </div>
+                  {detectorStats.length === 0 && (
+                    <div className="text-center text-gray-500 text-sm mt-4">No closed trades found for this period.</div>
+                  )}
                 </div>
               </div>
             )}
