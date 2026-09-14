@@ -60,7 +60,7 @@ const TradeDetailsModal = ({ trade, onClose, livePnl }: { trade: any, onClose: (
           <div>
             <div className="text-xs text-gray-500 mb-1">Status</div>
             <div className={`text-sm font-bold uppercase ${isHistory ? 'text-gray-400' : 'text-blue-400'}`}>
-              {isHistory ? 'Closed' : 'Active'} • {trade.gated ? 'Gated' : 'Ungated'}
+              {isHistory ? 'Closed' : 'Active'} • {trade.gated ? 'Gated' : 'Ungated'}{trade.capitalGated ? ' • CAP-GATED' : ''}
             </div>
           </div>
           {isHistory && trade.r_multiple !== undefined && (
@@ -226,7 +226,7 @@ export default function App() {
   }).sort((a, b) => Number(b.totalR) - Number(a.totalR));
 
   const exportCsv = () => {
-    const headers = ['Symbol', 'Side', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Size', 'Entry', 'Exit', 'PnL', 'R-Multiple'];
+    const headers = ['Symbol', 'Side', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Capital Gated', 'Size', 'Entry', 'Exit', 'PnL', 'R-Multiple'];
     const rows = history.map(t => [
       t.symbol,
       t.side,
@@ -235,6 +235,7 @@ export default function App() {
       t.detectorName,
       t.regimeClass || 'UNIVERSAL',
       t.gated ? 'YES' : 'NO',
+      t.capitalGated ? 'YES' : 'NO',
       t.size || 100,
       t.entryPrice,
       t.exitPrice || '',
