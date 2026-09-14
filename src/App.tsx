@@ -12,8 +12,7 @@ import {
   MoreHorizontal,
   TrendingUp,
   Crosshair,
-  AlertCircle,
-  TerminalSquare
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
