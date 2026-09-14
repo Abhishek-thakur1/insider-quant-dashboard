@@ -23,27 +23,27 @@ const TradeDetailsModal = ({ trade, onClose, livePnl }: { trade: any, onClose: (
   const isHistory = !!trade.exitPrice;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pt-10">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-lg bg-[#141416] border border-[#222225] rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-[#141416] border border-[#222225] rounded-2xl shadow-2xl flex flex-col max-h-[85vh]"
       >
-        <div className="flex justify-between items-center p-6 border-b border-[#222225]">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${trade.side === 'LONG' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-[#222225] shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-base sm:text-lg ${trade.side === 'LONG' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
               {trade.side}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white font-mono">{trade.symbol}</h2>
-              <div className="text-xs text-gray-500">{trade.detectorName} • {trade.regimeClass || 'UNIVERSAL'}</div>
+              <h2 className="text-lg sm:text-xl font-bold text-white font-mono">{trade.symbol}</h2>
+              <div className="text-[10px] sm:text-xs text-gray-500">{trade.detectorName} • {trade.regimeClass || 'UNIVERSAL'}</div>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white p-2 rounded-lg hover:bg-[#1c1c1e] transition-colors"><X className="w-5 h-5" /></button>
         </div>
         
-        <div className="p-6 grid grid-cols-2 gap-6">
+        <div className="p-4 sm:p-6 grid grid-cols-2 gap-4 sm:gap-6 overflow-y-auto custom-scrollbar">
           <div>
             <div className="text-xs text-gray-500 mb-1">Entry Price</div>
             <div className="text-lg font-bold text-white font-mono">₹{trade.entryPrice} <span className="text-sm text-gray-500">({trade.size || 100}x)</span></div>
@@ -72,7 +72,7 @@ const TradeDetailsModal = ({ trade, onClose, livePnl }: { trade: any, onClose: (
           )}
         </div>
 
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6 shrink-0 pt-2 sm:pt-0">
           <div className="p-4 rounded-xl bg-[#1a1a1c] border border-[#222225] flex justify-between items-center">
             <span className="text-sm font-semibold text-gray-400">Total PnL</span>
             <span className={`text-2xl font-bold font-mono tracking-tight ${
@@ -273,10 +273,10 @@ export default function App() {
   if (chartData.length === 0) chartData.push({ time: '09:15', pnl: 0 });
 
   return (
-    <div className="flex h-screen bg-[#0f0f10] text-gray-300 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#0f0f10] text-gray-300 font-sans overflow-hidden">
       
-      {/* Sidebar - Hidden on mobile */}
-      <aside className="hidden md:flex w-64 bg-[#141416] border-r border-[#222225] flex-col p-6">
+      {/* Sidebar - Hidden on mobile/tablet */}
+      <aside className="hidden lg:flex w-64 bg-[#141416] border-r border-[#222225] flex-col p-6 shrink-0">
         <div className="flex items-center gap-3 mb-10 text-white">
           <Activity className="w-8 h-8 text-blue-500" />
           <h1 className="text-xl font-bold tracking-wide">Ninefifteen</h1>
@@ -315,50 +315,62 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col p-8 overflow-y-auto custom-scrollbar">
+      <main className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar pb-24 lg:pb-8">
         
         {/* Top Header */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div className="relative w-full md:w-96">
+        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 lg:mb-8">
+          <div className="flex items-center justify-between w-full lg:w-auto gap-4">
+            <div className="flex items-center gap-3 lg:hidden">
+              <div className="w-10 h-10 rounded-full bg-blue-900 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold shrink-0">
+                N
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">Ninefifteen</div>
+                <div className="text-[10px] text-gray-400">Paper Trading Mode</div>
+              </div>
+            </div>
+            <button className="w-10 h-10 rounded-xl bg-[#141416] border border-[#222225] flex items-center justify-center hover:text-white transition-colors shrink-0 lg:hidden">
+              <Bell className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="relative w-full lg:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input 
               type="text" 
               placeholder="Search symbols, detectors..." 
-              className="w-full bg-[#141416] border border-[#222225] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full bg-[#141416] border border-[#222225] rounded-xl py-3 lg:py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
-          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
-            
-            <div className="flex items-center gap-3">
-              <select 
-                value={selectedDetector}
-                onChange={(e) => setSelectedDetector(e.target.value)}
-                className="bg-[#141416] border border-[#222225] rounded-xl px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
-              >
-                <option value="ALL">All Detectors</option>
-                {uniqueDetectors.map(d => (
-                  <option key={String(d)} value={String(d)}>{String(d)}</option>
-                ))}
-              </select>
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto">
+            <select 
+              value={selectedDetector}
+              onChange={(e) => setSelectedDetector(e.target.value)}
+              className="flex-1 lg:flex-none bg-[#141416] border border-[#222225] rounded-xl px-3 py-3 lg:py-2 text-sm font-semibold text-white focus:outline-none focus:border-blue-500 cursor-pointer min-w-[140px]"
+            >
+              <option value="ALL">All Detectors</option>
+              {uniqueDetectors.map(d => (
+                <option key={String(d)} value={String(d)}>{String(d)}</option>
+              ))}
+            </select>
 
-              <div className="bg-[#141416] border border-[#222225] px-4 py-2 rounded-xl flex items-center gap-3 relative">
-                <input 
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  max={format(new Date(), 'yyyy-MM-dd')}
-                  className="bg-transparent text-white font-semibold outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
-                />
-                {!isToday && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-[#141416]" title="Viewing Historical Data"></div>}
-              </div>
+            <div className="flex-1 lg:flex-none bg-[#141416] border border-[#222225] px-3 py-3 lg:py-2 rounded-xl flex items-center justify-center gap-3 relative min-w-[140px]">
+              <input 
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                max={format(new Date(), 'yyyy-MM-dd')}
+                className="bg-transparent text-white font-semibold outline-none cursor-pointer w-full text-center [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+              />
+              {!isToday && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-[#141416]" title="Viewing Historical Data"></div>}
             </div>
             
-            <button className="w-10 h-10 rounded-xl bg-[#141416] border border-[#222225] flex items-center justify-center hover:text-white transition-colors">
+            <button className="hidden lg:flex w-10 h-10 rounded-xl bg-[#141416] border border-[#222225] items-center justify-center hover:text-white transition-colors shrink-0">
               <Bell className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3 shrink-0 pl-2">
               <div className="w-10 h-10 rounded-full bg-blue-900 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
                 N
               </div>
@@ -371,7 +383,7 @@ export default function App() {
         </header>
 
         {/* Top KPI Cards - Always shown */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
           <div className="glass-card p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
@@ -440,13 +452,13 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 h-auto lg:h-[400px]">
             {/* Active Signals List */}
             <div className="lg:col-span-2 glass-card p-6 flex flex-col min-h-[400px] lg:min-h-0">
-              <div className="flex justify-between items-center mb-6 shrink-0">
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 shrink-0">
                 <h2 className="text-lg font-semibold text-white">{signalsFilter === 'live' ? 'Active Positions' : 'Filtered History'}</h2>
-                <div className="flex gap-2">
-                  <button onClick={() => setSignalsFilter('live')} className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${signalsFilter === 'live' ? 'bg-[#1c1c1e] text-blue-400 border-blue-500/30' : 'bg-transparent text-gray-400 border-transparent hover:text-white'}`}>Live Market</button>
-                  <button onClick={() => setSignalsFilter('filtered')} className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${signalsFilter === 'filtered' ? 'bg-[#1c1c1e] text-blue-400 border-blue-500/30' : 'bg-transparent text-gray-400 border-transparent hover:text-white'}`}>Filtered</button>
+                <div className="flex flex-wrap gap-2 justify-end mt-2 lg:mt-0">
+                  <button onClick={() => setSignalsFilter('live')} className={`px-3 lg:px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${signalsFilter === 'live' ? 'bg-[#1c1c1e] text-blue-400 border-blue-500/30' : 'bg-transparent text-gray-400 border-transparent hover:text-white'}`}>Live</button>
+                  <button onClick={() => setSignalsFilter('filtered')} className={`px-3 lg:px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${signalsFilter === 'filtered' ? 'bg-[#1c1c1e] text-blue-400 border-blue-500/30' : 'bg-transparent text-gray-400 border-transparent hover:text-white'}`}>Filtered</button>
                   {signalsFilter === 'filtered' && (
-                    <button onClick={exportCsv} className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border bg-[#1c1c1e] text-gray-300 border-[#333] hover:text-white hover:border-gray-500 ml-2">Export CSV</button>
+                    <button onClick={exportCsv} className="px-3 lg:px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors border bg-[#1c1c1e] text-gray-300 border-[#333] hover:text-white hover:border-gray-500">Export CSV</button>
                   )}
                 </div>
               </div>
@@ -465,55 +477,72 @@ export default function App() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="flex items-center justify-between p-4 bg-[#1a1a1c] border border-[#222225] rounded-xl hover:border-[#333] transition-colors cursor-pointer"
+                      className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-[#1a1a1c] border border-[#222225] rounded-xl hover:border-[#333] transition-colors cursor-pointer gap-4 md:gap-0"
                       onClick={() => setSelectedTrade(trade)}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${trade.side === 'LONG' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                          {trade.side.charAt(0)}
+                      <div className="flex items-center justify-between w-full md:w-auto">
+                        <div className="flex items-center gap-3 md:gap-4">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${trade.side === 'LONG' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                            {trade.side.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white font-mono">{trade.symbol}</div>
+                            <div className="text-[10px] md:text-xs text-gray-500">{trade.detectorName ? trade.detectorName.split(/(?=[A-Z])/).join(' ') : 'Unknown'}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-white font-mono">{trade.symbol}</div>
-                          <div className="text-xs text-gray-500">{trade.detectorName ? trade.detectorName.split(/(?=[A-Z])/).join(' ') : 'Unknown'}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-white font-mono">₹{trade.entryPrice}</div>
-                        <div className="text-xs text-gray-500">Entry <span className="text-gray-400 font-mono">({trade.size || 100}x)</span></div>
-                      </div>
-                      
-                      <div className="text-right hidden sm:block">
-                        <div className="text-sm font-bold text-green-400 font-mono">₹{trade.target}</div>
-                        <div className="text-xs text-gray-500">Target</div>
-                      </div>
-
-                      <div className="text-right">
-                        {trade.exitPrice ? (
-                          <>
-                            <div className={`text-sm font-bold font-mono ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className="md:hidden">
+                          {trade.exitPrice ? (
+                            <div className={`text-base font-bold font-mono text-right ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {trade.pnl >= 0 ? '+' : ''}₹{trade.pnl.toFixed(2)}
                             </div>
-                            <div className="text-[10px] text-gray-500 font-semibold">{trade.exitReason}</div>
-                          </>
-                        ) : (livePnlUpdates[trade.symbol] !== undefined ? (
-                          <>
-                            <div className={`text-sm font-bold font-mono ${livePnlUpdates[trade.symbol] >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          ) : (livePnlUpdates[trade.symbol] !== undefined ? (
+                            <div className={`text-base font-bold font-mono text-right ${livePnlUpdates[trade.symbol] >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {livePnlUpdates[trade.symbol] >= 0 ? '+' : ''}₹{livePnlUpdates[trade.symbol].toFixed(2)}
                             </div>
-                            <div className="text-[10px] text-blue-500 font-semibold animate-pulse">LIVE PnL</div>
-                          </>
-                        ) : (
-                          <div className="text-xs text-gray-500">Waiting for tick...</div>
-                        ))}
+                          ) : (
+                            <div className="text-xs text-gray-500 text-right">Waiting...</div>
+                          ))}
+                        </div>
                       </div>
                       
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedTrade(trade); }}
-                        className="px-4 py-2 bg-[#222225] hover:bg-[#2a2a2e] text-xs font-semibold text-white rounded-lg transition-colors border border-[#333]"
-                      >
-                        Details
-                      </button>
+                      <div className="grid grid-cols-2 md:flex md:items-center gap-4 md:gap-8 w-full md:w-auto border-t border-[#222225] md:border-t-0 pt-3 md:pt-0">
+                        <div className="text-left md:text-right">
+                          <div className="text-sm font-bold text-white font-mono">₹{trade.entryPrice}</div>
+                          <div className="text-[10px] md:text-xs text-gray-500">Entry <span className="text-gray-400 font-mono">({trade.size || 100}x)</span></div>
+                        </div>
+                        
+                        <div className="text-right md:text-right">
+                          <div className="text-sm font-bold text-green-400 font-mono">₹{trade.target}</div>
+                          <div className="text-[10px] md:text-xs text-gray-500">Target</div>
+                        </div>
+
+                        <div className="hidden md:block text-right min-w-[70px]">
+                          {trade.exitPrice ? (
+                            <>
+                              <div className={`text-sm font-bold font-mono ${trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {trade.pnl >= 0 ? '+' : ''}₹{trade.pnl.toFixed(2)}
+                              </div>
+                              <div className="text-[10px] text-gray-500 font-semibold">{trade.exitReason}</div>
+                            </>
+                          ) : (livePnlUpdates[trade.symbol] !== undefined ? (
+                            <>
+                              <div className={`text-sm font-bold font-mono ${livePnlUpdates[trade.symbol] >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {livePnlUpdates[trade.symbol] >= 0 ? '+' : ''}₹{livePnlUpdates[trade.symbol].toFixed(2)}
+                              </div>
+                              <div className="text-[10px] text-blue-500 font-semibold animate-pulse">LIVE PnL</div>
+                            </>
+                          ) : (
+                            <div className="text-xs text-gray-500">Waiting for tick...</div>
+                          ))}
+                        </div>
+                        
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setSelectedTrade(trade); }}
+                          className="col-span-2 md:col-span-1 px-4 py-2 bg-[#222225] hover:bg-[#2a2a2e] text-xs font-semibold text-white rounded-lg transition-colors border border-[#333] w-full md:w-auto mt-2 md:mt-0"
+                        >
+                          Details
+                        </button>
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -524,7 +553,7 @@ export default function App() {
             <div className="glass-card p-6 flex flex-col">
               <h2 className="text-lg font-semibold text-white mb-6">Trading Activity</h2>
               <div className="flex-1 flex flex-col justify-center">
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                   {(() => {
                     const latest28 = heatmapData.slice(0, 28).reverse();
                     const paddedHeatmap = Array.from({ length: 28 }, (_, i) => 
@@ -663,6 +692,22 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#141416]/95 backdrop-blur-md border-t border-[#222225] flex items-center justify-around p-2 pb-safe z-40">
+        <button onClick={() => setCurrentView('dashboard')} className={`flex flex-col items-center p-2 rounded-lg ${currentView === 'dashboard' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <LayoutDashboard className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-semibold">Dashboard</span>
+        </button>
+        <button onClick={() => setCurrentView('history')} className={`flex flex-col items-center p-2 rounded-lg ${currentView === 'history' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <History className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-semibold">History</span>
+        </button>
+        <button onClick={() => setCurrentView('performance')} className={`flex flex-col items-center p-2 rounded-lg ${currentView === 'performance' ? 'text-blue-400' : 'text-gray-500'}`}>
+          <TrendingUp className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-semibold">Stats</span>
+        </button>
+      </nav>
     </div>
   );
 }
