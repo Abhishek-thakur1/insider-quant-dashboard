@@ -225,7 +225,7 @@ export default function App() {
   }).sort((a, b) => Number(b.totalR) - Number(a.totalR));
 
   const exportCsv = () => {
-    const headers = ['Symbol', 'Side', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Capital Gated', 'Size', 'Entry', 'Exit', 'PnL', 'R-Multiple'];
+    const headers = ['Symbol', 'Side', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Capital Gated', 'Unconstrained Size', 'Actual Executed Size', 'Entry', 'Exit', 'PnL', 'R-Multiple'];
     const rows = history.map(t => [
       t.symbol,
       t.side,
@@ -236,6 +236,7 @@ export default function App() {
       t.gated ? 'YES' : 'NO',
       t.capitalGated ? 'YES' : 'NO',
       t.size || 100,
+      t.actualSize !== undefined ? t.actualSize : (t.size || 100),
       t.entryPrice,
       t.exitPrice || '',
       t.pnl || 0,
