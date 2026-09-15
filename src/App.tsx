@@ -153,7 +153,7 @@ export default function App() {
     // Only connect SSE if viewing Today
     if (!isToday) return;
 
-    const sse = new EventSource(`${API_URL}/api/stream`);
+    const sse = new EventSource(`${API_URL}/api/events`);
 
     sse.onmessage = (event) => {
       try {
@@ -190,7 +190,25 @@ export default function App() {
       if (isToday) fetchInitialData();
     };
 
-    return () => sse.close();
+    // Polling Fallback for Adblockers / Vercel Proxy Timeouts
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/live-pnl`);
+        if (res.data?.data) {
+          setLivePnlUpdates(prev => ({
+            ...prev,
+            ...res.data.data
+          }));
+        }
+      } catch (e) {
+        console.warn("Polling fallback failed:", e);
+      }
+    }, 2500);
+
+    return () => {
+      sse.close();
+      clearInterval(pollInterval);
+    };
   }, [isToday, selectedDetector]);
 
   // Compute Unrealized PnL from the live updates (only for today)
