@@ -859,13 +859,40 @@ export default function App() {
 
               <div className="flex-1 overflow-y-auto min-h-0 pr-1 space-y-2 custom-scrollbar">
                 <AnimatePresence>
-                  {signalsFilter === 'live'
-                    ? openTrades.length === 0
-                      ? renderEmptyState('No active positions.')
-                      : openTrades.map((t) => renderTradeRow(t, false))
-                    : filteredHistory.length === 0
-                    ? renderEmptyState('No closed trades for this date.')
-                    : filteredHistory.map((t) => renderTradeRow(t, true))}
+                  {signalsFilter === 'live' ? (
+                    openTrades.length === 0 ? (
+                      renderEmptyState('No active positions.')
+                    ) : (
+                      <div className="space-y-4">
+                        {openTrades.filter(t => (!t.durationClass || t.durationClass === 'INTRADAY')).length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2 sticky top-0 bg-[#141416] py-1 z-10 border-b border-[#222225]">
+                              <span className="text-xs font-semibold text-cyan-400 border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 rounded">⚡ INTRADAY</span>
+                              <span className="text-xs text-gray-500 font-medium">Closes EOD (3:15 PM)</span>
+                            </div>
+                            <div className="space-y-2">
+                              {openTrades.filter(t => (!t.durationClass || t.durationClass === 'INTRADAY')).map(t => renderTradeRow(t, false))}
+                            </div>
+                          </div>
+                        )}
+                        {openTrades.filter(t => t.durationClass === 'SWING').length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2 sticky top-0 bg-[#141416] py-1 z-10 border-b border-[#222225]">
+                              <span className="text-xs font-semibold text-purple-400 border border-purple-400/30 bg-purple-500/10 px-2 py-0.5 rounded">🌙 SWING</span>
+                              <span className="text-xs text-gray-500 font-medium">Multi-day hold</span>
+                            </div>
+                            <div className="space-y-2">
+                              {openTrades.filter(t => t.durationClass === 'SWING').map(t => renderTradeRow(t, false))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  ) : filteredHistory.length === 0 ? (
+                    renderEmptyState('No closed trades for this date.')
+                  ) : (
+                    filteredHistory.map((t) => renderTradeRow(t, true))
+                  )}
                 </AnimatePresence>
               </div>
             </div>
