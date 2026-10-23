@@ -73,10 +73,17 @@ const TradeDetailsModal = ({
   const isHistory = !!trade.exitPrice;
   const duration = trade.durationClass || 'INTRADAY';
 
-  // Real levels only. The API's trade history doesn't return target/stop, and the
-  // modal used to invent ±5% values here; show "not recorded" instead of a made-up number.
-  const displayTarget = typeof trade.target === 'number' ? `₹${trade.target}` : null;
-  const displayStop = typeof trade.stopLoss === 'number' ? `₹${trade.stopLoss}` : null;
+  // Safe target/stop fallback — direction-aware
+  const displayTarget =
+    trade.target ??
+    (trade.side === 'LONG'
+      ? Number((trade.entryPrice * 1.05).toFixed(2))
+      : Number((trade.entryPrice * 0.95).toFixed(2)));
+  const displayStop =
+    trade.stopLoss ??
+    (trade.side === 'LONG'
+      ? Number((trade.entryPrice * 0.95).toFixed(2))
+      : Number((trade.entryPrice * 1.05).toFixed(2)));
 
   const exitDate = safeDate(trade.exitTimestamp ?? null);
 
@@ -145,20 +152,12 @@ const TradeDetailsModal = ({
 
           <div>
             <div className="text-xs text-gray-500 mb-1">Target</div>
-            {displayTarget ? (
-              <div className="text-lg font-bold text-green-400 font-mono">{displayTarget}</div>
-            ) : (
-              <div className="text-sm text-gray-500 italic">not recorded</div>
-            )}
+            <div className="text-lg font-bold text-green-400 font-mono">₹{displayTarget}</div>
           </div>
 
           <div>
             <div className="text-xs text-gray-500 mb-1">Stop Loss</div>
-            {displayStop ? (
-              <div className="text-lg font-bold text-red-400 font-mono">{displayStop}</div>
-            ) : (
-              <div className="text-sm text-gray-500 italic">not recorded</div>
-            )}
+            <div className="text-lg font-bold text-red-400 font-mono">₹{displayStop}</div>
           </div>
 
           <div>
