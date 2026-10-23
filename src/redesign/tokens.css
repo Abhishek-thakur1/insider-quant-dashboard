@@ -1,6 +1,6 @@
-/* Ninefifteen redesign — design tokens (owner-approved 2026-10-23).
-   Dark by default, one calm accent, teal/coral gain/loss (never colour alone),
-   tabular figures. Fonts are bundled (@fontsource), no external font call. */
+/* Ninefifteen redesign — design system v2 (stage 2, 2026-10-23).
+   Dark by default, one calm accent (owner-approved blue), teal/coral gain/loss that never rely on
+   colour alone (sign + icon), tabular figures. Fonts are bundled (@fontsource): no external calls. */
 @import "@fontsource/ibm-plex-sans/latin-400.css";
 @import "@fontsource/ibm-plex-sans/latin-500.css";
 @import "@fontsource/ibm-plex-sans/latin-600.css";
@@ -9,40 +9,114 @@
 @import "@fontsource/fraunces/latin-600.css";
 
 .nf {
-  --bg: #0e1319; --surface: #151c24; --surface-2: #1b2430; --line: #26313e;
-  --fg: #e3e9f0; --muted: #8b98a8; --accent: #6ea8e6;
-  --gain: #3cc2ad; --loss: #f0875f; --warn: #e0a83a;
+  /* colour */
+  --bg: #0b1016; --bg-glow: #12243a; --surface: #131a22; --surface-2: #1a232e; --surface-3: #212c39; --line: #253140; --line-strong: #33445a;
+  --fg: #e6ecf2; --muted: #93a1b2; --faint: #6b7a8c; --accent: #6ea8e6; --accent-ink: #0b1016;
+  --gain: #3cc2ad; --loss: #f0875f; --warn: #e0a83a; --info: #8fb7ea;
+  --gain-bg: color-mix(in srgb, var(--gain) 14%, transparent); --loss-bg: color-mix(in srgb, var(--loss) 14%, transparent);
+  --accent-bg: color-mix(in srgb, var(--accent) 14%, transparent); --warn-bg: color-mix(in srgb, var(--warn) 14%, transparent);
+  --glass: color-mix(in srgb, var(--surface) 82%, transparent);
+  /* type */
   --display: "Fraunces", Georgia, serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-  --r-s: 8px; --r-m: 14px; --r-l: 20px;
-  --e1: 0 1px 2px rgb(0 0 0 / .25); --e2: 0 6px 24px rgb(0 0 0 / .28);
+  --t-xs: .72rem; --t-s: .8rem; --t-m: .9rem; --t-l: 1.05rem; --t-xl: 1.3rem; --t-2xl: 1.75rem; --t-3xl: 2.25rem;
+  /* spacing (4 px grid) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px;
+  /* radius */
+  --r-s: 8px; --r-m: 14px; --r-l: 20px; --r-xl: 26px; --r-pill: 999px;
+  /* elevation */
+  --e1: 0 1px 2px rgb(0 0 0 / .28);
+  --e2: 0 1px 2px rgb(0 0 0 / .2), 0 8px 24px -6px rgb(0 0 0 / .45);
+  --e3: 0 2px 4px rgb(0 0 0 / .25), 0 22px 48px -12px rgb(0 0 0 / .6);
+  /* motion */
+  --ease: cubic-bezier(.2, .8, .2, 1); --d-fast: .15s; --d-med: .32s; --d-slow: .7s;
   color-scheme: dark;
-  background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body);
+  background: radial-gradient(1200px 600px at 85% -10%, var(--bg-glow), transparent 60%), var(--bg);
+  color: var(--fg); font: 15px/1.5 var(--body);
   min-height: 100dvh;
 }
 .nf[data-theme="light"] {
-  --bg: #f4f6f8; --surface: #ffffff; --surface-2: #eef1f5; --line: #d9dee6;
-  --fg: #16202b; --muted: #5b6878; --accent: #2f6fb2;
-  --gain: #1c8a7a; --loss: #c2552e; --warn: #a86b00;
-  --e1: 0 1px 2px rgb(16 32 48 / .08); --e2: 0 6px 24px rgb(16 32 48 / .10);
+  --bg: #f3f5f8; --bg-glow: #dde9f7; --surface: #ffffff; --surface-2: #eef2f6; --surface-3: #e4e9f0; --line: #d8dee7; --line-strong: #c3ccd8;
+  --fg: #142030; --muted: #556375; --faint: #6f7d8e; --accent: #2f6fb2; --accent-ink: #ffffff;
+  --gain: #17806f; --loss: #b94c25; --warn: #8f5c00; --info: #2f6fb2;
+  --glass: color-mix(in srgb, var(--surface) 86%, transparent);
+  --e1: 0 1px 2px rgb(16 32 48 / .07);
+  --e2: 0 1px 2px rgb(16 32 48 / .06), 0 8px 24px -8px rgb(16 32 48 / .16);
+  --e3: 0 2px 4px rgb(16 32 48 / .08), 0 22px 48px -14px rgb(16 32 48 / .25);
   color-scheme: light;
 }
 .nf *, .nf *::before, .nf *::after { box-sizing: border-box }
-.nf .num { font-family: var(--mono); font-variant-numeric: tabular-nums }
-.nf .gain { color: var(--gain) } .nf .loss { color: var(--loss) } .nf .warn { color: var(--warn) } .nf .muted { color: var(--muted) }
-.nf h1, .nf h2 { font-family: var(--display); font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: balance }
-.nf .lbl { font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
-.nf .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--e1); padding: 16px; min-width: 0 }
-.nf .card.click { cursor: pointer; transition: border-color .15s, transform .15s }
-.nf .card.click:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)) }
-.nf .pill { display: inline-flex; align-items: center; gap: 6px; font: 500 .74rem var(--mono); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); white-space: nowrap }
-.nf .pill.paper { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent) }
-.nf .chip { font: 500 .7rem var(--mono); padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap }
-.nf .btn { font: 500 .85rem var(--body); color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-s); padding: 7px 12px; cursor: pointer }
-.nf .btn[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)) }
-.nf input, .nf select { font: 500 .85rem var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); padding: 7px 10px; min-width: 0 }
+.nf .num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em }
+.nf .gain { color: var(--gain) } .nf .loss { color: var(--loss) } .nf .warn { color: var(--warn) } .nf .muted { color: var(--muted) } .nf .accent { color: var(--accent) }
+.nf h1, .nf h2, .nf h3 { font-family: var(--display); font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: balance }
+.nf h2 { font-size: var(--t-l) }
+.nf .lbl { font-size: var(--t-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
+.nf .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+
+/* cards: soft elevation with a glass top edge */
+.nf .card { position: relative; background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--e2); padding: var(--s4); min-width: 0 }
+.nf .card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgb(255 255 255 / .04), transparent 40%) }
+.nf .card.flat { box-shadow: var(--e1); background: var(--surface-2); border-radius: var(--r-m) }
+.nf .card.click { cursor: pointer; transition: border-color var(--d-fast) var(--ease), transform var(--d-fast) var(--ease), box-shadow var(--d-fast) var(--ease) }
+.nf .card.click:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); transform: translateY(-2px); box-shadow: var(--e3) }
+.nf .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s3); min-width: 0 }
+
+.nf .pill { display: inline-flex; align-items: center; gap: 6px; font: 500 var(--t-xs) var(--mono); padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); white-space: nowrap }
+.nf .pill.paper { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: var(--warn-bg) }
+.nf .chip { display: inline-flex; align-items: center; gap: 4px; font: 500 .7rem var(--mono); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap; vertical-align: middle }
+.nf .chip.gain { background: var(--gain-bg); border-color: transparent } .nf .chip.loss { background: var(--loss-bg); border-color: transparent }
+.nf .chip.accent { background: var(--accent-bg); color: var(--accent); border-color: transparent } .nf .chip.warn { background: var(--warn-bg); border-color: transparent }
+.nf .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; font: 500 var(--t-m) var(--body); color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-m); padding: 8px 14px; cursor: pointer; transition: background var(--d-fast), border-color var(--d-fast) }
+.nf .btn:hover { border-color: var(--line-strong) }
+.nf .btn[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); background: var(--accent-bg) }
+.nf .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-m); background: var(--surface-2); border: 1px solid var(--line) }
+.nf .seg button { min-height: 38px; min-width: 44px; padding: 4px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: 600 var(--t-s) var(--body); cursor: pointer }
+.nf .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: var(--e1) }
+.nf input, .nf select { min-height: 44px; font: 500 var(--t-m) var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 8px 12px; min-width: 0 }
 .nf :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
-.nf .bar { height: 8px; border-radius: 99px; background: var(--surface-2); position: relative; overflow: hidden }
-.nf .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 99px }
-@media (prefers-reduced-motion: reduce) { .nf * { transition: none !important; animation: none !important } }
+.nf .bar { height: 8px; border-radius: 99px; background: var(--surface-3); position: relative; overflow: hidden }
+.nf .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 99px; transition: width var(--d-med) var(--ease) }
+
+/* layout: mobile-first, bottom nav on phone, sidebar from 1024 px */
+.nf-shell { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100dvh }
+.nf-side { display: none }
+.nf-main { display: grid; gap: var(--s4); align-content: start; min-width: 0; padding: var(--s4) max(var(--s4), env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(var(--s4), env(safe-area-inset-left, 0px)); max-width: 1680px; width: 100%; margin-inline: auto }
+.nf-bottom { position: fixed; inset-inline: 0; bottom: 0; z-index: 20; display: grid; background: var(--glass); backdrop-filter: blur(14px); border-top: 1px solid var(--line); padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
+.nf-bottom button { min-height: 52px; background: none; border: 0; display: grid; justify-items: center; align-content: center; gap: 2px; font: 600 .68rem var(--body); color: var(--muted); cursor: pointer; border-radius: var(--r-m) }
+.nf-bottom button[aria-current="page"] { color: var(--accent) }
+.nf-foot { display: flex; justify-content: center; padding-top: var(--s2) }
+.nf-grid { display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)) }
+.nf-two { display: grid; gap: var(--s4); grid-template-columns: minmax(0, 1fr) }
+.nf-masonry { columns: 1; column-gap: var(--s4) }
+.nf-masonry > * { break-inside: avoid; margin-bottom: var(--s4); display: block }
+@media (min-width: 720px) { .nf-masonry { columns: 2 } .nf-main { padding-top: var(--s6) } }
+@media (min-width: 900px) { .nf-two { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) } }
+@media (min-width: 1024px) {
+  .nf-shell { grid-template-columns: 236px minmax(0, 1fr) }
+  .nf-side { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s5); border-right: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(14px); position: sticky; top: 0; height: 100dvh }
+  .nf-side .navbtn { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border-radius: var(--r-m); border: 1px solid transparent; background: transparent; color: var(--muted); font: 600 var(--t-m) var(--body); cursor: pointer; text-align: left }
+  .nf-side .navbtn:hover { color: var(--fg); background: var(--surface-2) }
+  .nf-side .navbtn[aria-current="page"] { color: var(--fg); background: var(--accent-bg); border-color: color-mix(in srgb, var(--accent) 35%, transparent) }
+  .nf-main { padding: var(--s6) var(--s8) var(--s10) }
+  .nf-bottom, .nf-foot { display: none !important }
+}
+@media (min-width: 1440px) { .nf-masonry { columns: 3 } }
+/* landscape phone: compact the bottom nav */
+@media (max-height: 480px) and (orientation: landscape) { .nf-bottom button { min-height: 44px; font-size: 0; gap: 0 } .nf-main { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) } }
+
+/* motion */
+@keyframes nf-shimmer { 0% { background-position: -400px 0 } 100% { background-position: 400px 0 } }
+.nf .skel { border-radius: var(--r-s); background: linear-gradient(90deg, var(--surface-2) 0, var(--surface-3) 40%, var(--surface-2) 80%) 0 0 / 800px 100%; animation: nf-shimmer 1.4s linear infinite; color: transparent }
+@keyframes nf-flash-gain { 0% { background: color-mix(in srgb, var(--gain) 35%, transparent) } 100% { background: transparent } }
+@keyframes nf-flash-loss { 0% { background: color-mix(in srgb, var(--loss) 35%, transparent) } 100% { background: transparent } }
+@keyframes nf-flash-neutral { 0% { background: color-mix(in srgb, var(--accent) 30%, transparent) } 100% { background: transparent } }
+.nf .flash-up { animation: nf-flash-gain 1.2s var(--ease) } .nf .flash-down { animation: nf-flash-loss 1.2s var(--ease) } .nf .flash-same { animation: nf-flash-neutral 1.2s var(--ease) }
+.nf .flash-up, .nf .flash-down, .nf .flash-same { border-radius: 6px }
+@keyframes nf-draw { from { stroke-dashoffset: var(--len, 1000) } to { stroke-dashoffset: 0 } }
+.nf .draw { stroke-dasharray: var(--len, 1000); animation: nf-draw var(--d-slow) var(--ease) both }
+@keyframes nf-fade-up { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.nf .fade-in { animation: nf-fade-up .45s var(--ease) both }
+@keyframes nf-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.nf .pulse { animation: nf-pulse 1.8s ease-in-out infinite }
+@media (prefers-reduced-motion: reduce) { .nf *, .nf *::before { transition: none !important; animation: none !important } .nf .draw { stroke-dasharray: none } }

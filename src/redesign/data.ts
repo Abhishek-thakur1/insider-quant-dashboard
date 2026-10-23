@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import { format } from 'date-fns'
 import { resolveApiBase } from '../apiBase'
+import type { Health, SignalRow } from './logic.ts'
 
 export interface Trade {
   id: number | string
@@ -26,6 +27,8 @@ export interface Trade {
   exitReason?: string
   target?: number
   stopLoss?: number
+  /** engine PR #24: data-quality flags (history and open trades) */
+  dataQuality?: string[]
 }
 
 export const API_URL = resolveApiBase(import.meta.env.VITE_API_URL, typeof window !== 'undefined' ? window.location.protocol : undefined)
@@ -143,3 +146,38 @@ export function useDashboardData(date: string, detector: string) {
 
   return { isToday, gatedHistory, allHistory, openTrades, heatmap, livePnl, stream, updatedAt, error, loading, detectors, reload: load }
 }
+
+export type Loadable<T> = { data: T | null; loading: boolean; error: string | null; at: number | null }
+
+/** GET a JSON endpoint, re-read every `everyMs` (0 = once). Keeps the last good data on error. */
+function usePoll<T>(path: string | null, pick: (body: any) => T, everyMs: number): Loadable<T> {
+  const [s, set] = useState<Loadable<T>>({ data: null, loading: !!path, error: null, at: null })
+  useEffect(() => {
+    if (!path) { set({ data: null, loading: false, error: null, at: null }); return }
+    let live = true
+    const run = async () => {
+      try {
+        const r = await axios.get(`${API_URL}${path}`)
+        if (live) set({ data: pick(r.data), loading: false, error: null, at: Date.now() })
+      } catch {
+        if (live) set((p) => ({ ...p, loading: false, error: 'Could not reach the API.' }))
+      }
+    }
+    set((p) => ({ ...p, loading: true }))
+    void run()
+    const t = everyMs ? setInterval(run, everyMs) : undefined
+    return () => { live = false; if (t) clearInterval(t) }
+  }, [path, everyMs])
+  return s
+}
+
+/** Every fire for a date (engine PR #24, GET /api/signals). Re-read every 30 s for today. */
+export const useSignals = (date: string, isToday: boolean) =>
+  usePoll<SignalRow[]>(`/api/signals?date=${date}`, (b) => b?.data ?? [], isToday ? 30_000 : 0)
+
+/** Coarse public health (engine PR #24, GET /api/health). Re-read every 30 s. */
+export const useHealth = () => usePoll<Health | null>('/api/health', (b) => b?.data ?? null, 30_000)
+
+/** The latest closed trades across days (the API returns at most 200), for the equity curve. */
+export const useRecentHistory = (gatedOnly: boolean) =>
+  usePoll<Trade[]>(`/api/trades/history${gatedOnly ? '' : '?includeUngated=true'}`, (b) => b?.data ?? [], 60_000)
