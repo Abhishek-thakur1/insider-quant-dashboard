@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test tests/apiBase.test.mjs"
+    "test": "node --experimental-strip-types --test tests/apiBase.test.mjs tests/route.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
