@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import { format } from 'date-fns'
+import { resolveApiBase } from '../apiBase'
 
 export interface Trade {
   id: number | string
@@ -27,7 +28,7 @@ export interface Trade {
   stopLoss?: number
 }
 
-export const API_URL = import.meta.env.VITE_API_URL ?? ''
+export const API_URL = resolveApiBase(import.meta.env.VITE_API_URL, typeof window !== 'undefined' ? window.location.protocol : undefined)
 export const ALL = 'ALL'
 export const todayStr = () => format(new Date(), 'yyyy-MM-dd')
 
