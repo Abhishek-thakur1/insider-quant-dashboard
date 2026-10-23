@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { resolveApiBase } from './apiBase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -259,7 +260,7 @@ const StatCard = ({
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_API_URL ?? '';
+const API_URL = resolveApiBase(import.meta.env.VITE_API_URL, typeof window !== 'undefined' ? window.location.protocol : undefined);
 const ALL_DETECTORS_KEY = 'ALL';
 
 export default function App() {
