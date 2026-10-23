@@ -1,5 +1,5 @@
 // Ninefifteen redesign — stage 1: shell + tokens, Today, Positions, History at parity with
-// the classic dashboard (still reachable at #classic). Existing endpoints only. Paper trading.
+// the classic dashboard (the default route; this view is at #new). Existing endpoints only. Paper trading.
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { MotionConfig, AnimatePresence, motion } from 'framer-motion'
 import { CalendarDays, History as HistoryIcon, LayoutDashboard, Layers, Moon, Search, Sun, X } from 'lucide-react'
@@ -64,7 +64,7 @@ export default function App2() {
             ))}
             <div style={{ marginTop: 'auto', display: 'grid', gap: 8 }}>
               <span className="pill paper">PAPER TRADING · no proven edge</span>
-              <a href="#classic" className="muted" style={{ fontSize: '.8rem' }}>Open the classic dashboard</a>
+              <a href="#" className="muted" style={{ fontSize: '.8rem' }}>Open the classic dashboard</a>
             </div>
           </aside>
 
