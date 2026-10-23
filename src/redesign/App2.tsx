@@ -3,10 +3,10 @@
 // Existing endpoints only. Paper trading, no proven edge — labelled on every P&L view.
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { MotionConfig, AnimatePresence, motion } from 'framer-motion'
-import { Activity, AlertTriangle, CalendarDays, CircleSlash, Clock, History as HistoryIcon, LayoutDashboard, Layers, Moon, Radio, Search, Sun, WifiOff, X, Zap } from 'lucide-react'
-import { ALL, calcStats, todayStr, tradeKey, useDashboardData, useHealth, type Trade } from './data'
+import { Activity, AlertTriangle, CalendarDays, CircleSlash, Clock, History as HistoryIcon, LayoutDashboard, Layers, Moon, Radio, Search, Send, Sun, WifiOff, X, XCircle, Zap } from 'lucide-react'
+import { ALL, calcStats, todayStr, tradeKey, useDashboardData, useHealth, useSignals, type Trade } from './data'
 import { ago, clock, istParts, pct, rupees, secondsToSquareOff, shortSymbol, signedR, signedRupees, tone } from './format.ts'
-import { cumulative, impliedPrice, stopToTarget } from './logic.ts'
+import { cumulative, impliedPrice, notAlertedReason, signalsByTrade, stopToTarget, wasAlerted, type SignalRow } from './logic.ts'
 import { CountUp, Flash, Reveal } from './motion'
 import { Empty, SideChip, TradeList, ViewSkeleton } from './ui'
 import { Sparkline } from './Sparkline'
@@ -38,6 +38,7 @@ export default function App2() {
   const [now, setNow] = useState(Date.now())
   const d = useDashboardData(date, detector)
   const health = useHealth()
+  const signals = useSignals(date, d.isToday)
 
   useEffect(() => { savePref('nf:view', view) }, [view])
   useEffect(() => { savePref('nf:theme', theme) }, [theme])
@@ -47,6 +48,7 @@ export default function App2() {
   const match = (t: Trade) => !q || t.symbol.toLowerCase().includes(q) || t.detectorName?.toLowerCase().includes(q)
   const gated = useMemo(() => d.gatedHistory.filter(match), [d.gatedHistory, q])
   const all = useMemo(() => d.allHistory.filter(match), [d.allHistory, q])
+  const dayFires = useMemo(() => (signals.data ?? []).filter((r) => detector === ALL || r.detector === detector), [signals.data, detector])
   const open = useMemo(() => d.openTrades.filter(match), [d.openTrades, q])
   const ist = istParts(now, health.data?.status)
 
@@ -77,9 +79,9 @@ export default function App2() {
             <StateBanner market={ist.market} weekend={ist.weekend} stream={d.stream} isToday={d.isToday} error={d.error} />
             {view !== 'health' && <Controls date={date} setDate={setDate} detector={detector} setDetector={setDetector} detectors={d.detectors} query={query} setQuery={setQuery} isToday={d.isToday} />}
             <Suspense fallback={<ViewSkeleton />}>
-              {view === 'today' && <TodayView d={d} gated={gated} all={all} open={open} now={now} onSelect={setSelected} />}
+              {view === 'today' && <TodayView d={d} all={all} open={open} fires={dayFires} signalsLoaded={!!signals.data} now={now} onSelect={setSelected} />}
               {view === 'positions' && <PositionsView open={open} livePnl={d.livePnl} isToday={d.isToday} loading={d.loading} onSelect={setSelected} now={now} />}
-              {view === 'signals' && <SignalsView date={date} isToday={d.isToday} query={q} detector={detector} trades={d.allHistory} />}
+              {view === 'signals' && <SignalsView signals={signals} date={date} isToday={d.isToday} query={q} detector={detector} trades={d.allHistory} />}
               {view === 'history' && <HistoryView gated={gated} all={all} heatmap={d.heatmap} date={date} setDate={setDate} onSelect={setSelected} />}
               {view === 'health' && <HealthView health={health} stream={d.stream} updatedAt={d.updatedAt} now={now} market={ist.market} />}
             </Suspense>
@@ -174,21 +176,27 @@ function StatCard({ label, value, format, sub, spark, sparkLabel, i, valueTone }
   )
 }
 
-function TodayView({ d, gated, all, open, now, onSelect }: { d: ReturnType<typeof useDashboardData>; gated: Trade[]; all: Trade[]; open: Trade[]; now: number; onSelect: (t: Trade) => void }) {
-  const g = calcStats(gated), a = calcStats(all)
+function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect }: { d: ReturnType<typeof useDashboardData>; all: Trade[]; open: Trade[]; fires: SignalRow[]; signalsLoaded: boolean; now: number; onSelect: (t: Trade) => void }) {
+  // Alerted = actually sent to Telegram (signal log); recorded-only = every other paper trade.
+  const byTrade = useMemo(() => signalsByTrade(fires), [fires])
+  const alerted = useMemo(() => all.filter((t) => wasAlerted(t, byTrade)), [all, byTrade])
+  const recorded = useMemo(() => all.filter((t) => !wasAlerted(t, byTrade)), [all, byTrade])
+  const g = calcStats(alerted), a = calcStats(all)
   const unreal = open.reduce((s, t) => s + (d.livePnl[t.symbol] ?? 0), 0)
   const flagged = all.filter((t) => (t.dataQuality ?? []).length > 0)
   const flags = [...new Set(flagged.flatMap((t) => t.dataQuality ?? []))]
+  const rejected = fires.filter((r) => r.outcome === 'REJECTED').length
+  const day = d.isToday ? 'today' : 'on this date'
   if (d.loading && !d.updatedAt) return <ViewSkeleton />
   return (
     <>
-      <div className="nf-grid" role="group" aria-label="Today's paper P&L">
-        <StatCard i={0} label="Gated P&L · alerted · paper" value={g.pnl} format={signedRupees} spark={cumulative(gated, 'pnl')} sparkLabel="Gated cumulative P&L today"
-          sub={g.total ? <>{signedR(g.totalR)} · {g.total} trade{g.total === 1 ? '' : 's'} · best {g.best === null ? '—' : signedR(g.best)} · worst {g.worst === null ? '—' : signedR(g.worst)}</> : 'No alerted trades closed yet'} />
-        <StatCard i={1} label="All recorded P&L · paper" value={a.pnl} format={signedRupees} spark={cumulative(all, 'pnl')} sparkLabel="All recorded cumulative P&L today"
-          sub={<>{a.total} closed · {signedR(a.totalR)} total</>} />
-        <StatCard i={2} label="Win rate · gated" value={g.total ? g.winRate : null} format={(n) => pct(n)} valueTone="accent"
-          sub={g.total ? <>{g.wins} of {g.total}{g.total < 30 ? ' · small sample, not an edge' : ''}</> : 'no closed gated trades'} />
+      <div className="nf-grid" role="group" aria-label="Paper P&L">
+        <StatCard i={0} label="Alerted P&L · paper" value={g.pnl} format={signedRupees} spark={cumulative(alerted, 'pnl')} sparkLabel="Alerted cumulative P&L"
+          sub={g.total ? <>{signedR(g.totalR)} · {g.total} trade{g.total === 1 ? '' : 's'} · best {g.best === null ? '—' : signedR(g.best)} · worst {g.worst === null ? '—' : signedR(g.worst)}</> : `No alerted trades closed ${day}`} />
+        <StatCard i={1} label="All recorded (paper)" value={a.pnl} format={signedRupees} spark={cumulative(all, 'pnl')} sparkLabel="All recorded cumulative P&L"
+          sub={a.total < 30 ? `n=${a.total}, too small to mean anything` : `n=${a.total}`} />
+        <StatCard i={2} label="Win rate · alerted" value={g.total ? g.winRate : null} format={(n) => pct(n)} valueTone="accent"
+          sub={g.total ? <>{g.wins} of {g.total}{g.total < 30 ? ' · small sample, not an edge' : ''}</> : 'no closed alerted trades'} />
         <StatCard i={3} label="Open now · paper" value={open.length} format={(n) => String(Math.round(n))} valueTone="accent"
           sub={d.isToday ? <>unrealized <span className={`num ${tone(unreal)}`}>{signedRupees(unreal)}</span></> : 'only shown for today'} />
       </div>
@@ -196,17 +204,24 @@ function TodayView({ d, gated, all, open, now, onSelect }: { d: ReturnType<typeo
         <p className="muted" style={{ margin: 0, fontSize: 'var(--t-s)' }}><AlertTriangle size={13} aria-hidden className="warn" /> {flagged.length} of {all.length} rows carry data-quality flags ({flags.join(', ')}). They are included in the totals above.</p>
       )}
       <div className="nf-two">
+        <section className="card" aria-labelledby="t-alerted">
+          <div className="card-head"><h2 id="t-alerted">Alerted trades (sent to Telegram)</h2><span className="chip accent">{alerted.length}</span></div>
+          <TradeList trades={alerted} onSelect={onSelect} tag={() => <span className="chip accent"><Send size={12} aria-hidden /> alerted</span>}
+            empty={<Empty icon={<Send size={20} />} text={`No alerts ${day}.${signalsLoaded && fires.length ? ` The filter rejected ${rejected} of ${fires.length} signals.` : ''}`} sub={recorded.length ? 'The trades below were recorded on paper only.' : undefined} />} />
+        </section>
         <section className="card" aria-labelledby="t-open">
           <div className="card-head"><h2 id="t-open">Open positions</h2><span className="chip">{open.length}</span></div>
           {!d.isToday ? <Empty icon={<Layers size={20} />} text="Open positions are only shown for today." />
             : open.length === 0 ? <Empty icon={<Layers size={20} />} text="Flat. No open paper positions right now." sub="Intraday positions are squared off at 15:15 IST." />
               : <div style={{ display: 'grid', gap: 'var(--s3)' }}>{open.map((t, i) => <Reveal key={`${tradeKey(t)}-${t.id}`} i={i}><PositionCard t={t} pnl={d.livePnl[t.symbol]} now={now} onSelect={onSelect} /></Reveal>)}</div>}
         </section>
-        <section className="card" aria-labelledby="t-closed">
-          <div className="card-head"><h2 id="t-closed">Closed {d.isToday ? 'today' : 'on this date'}</h2><span className="chip">{all.length}</span></div>
-          <TradeList trades={all} onSelect={onSelect} empty={<Empty icon={<Clock size={20} />} text={d.isToday ? 'Nothing closed yet today.' : 'No closed trades on this date.'} sub="Every fire is recorded as a paper trade; alerts go out only when the filter passes." />} />
-        </section>
       </div>
+      <section className="card" aria-labelledby="t-recorded">
+        <div className="card-head"><h2 id="t-recorded">Recorded only (rejected by the filter, paper)</h2><span className="chip">{recorded.length}</span></div>
+        <p className="muted" style={{ margin: '0 0 var(--s3)', fontSize: 'var(--t-s)' }}>Every detector fire is recorded as a simulated paper trade, including fires the filter rejected. These were never sent as alerts and were not taken.</p>
+        <TradeList trades={recorded} onSelect={onSelect} tag={(t) => <span className="chip loss"><XCircle size={12} aria-hidden /> {notAlertedReason(byTrade.get(Number(t.id)))}</span>}
+          empty={<Empty icon={<Clock size={20} />} text={`No recorded-only trades closed ${day}.`} />} />
+      </section>
     </>
   )
 }
