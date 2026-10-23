@@ -68,9 +68,10 @@ export function useDashboardData(date: string, detector: string) {
   const [loading, setLoading] = useState(true)
   const reqId = useRef(0)
 
-  const load = async () => {
+  // quiet: a background refresh (polling fallback / reconnect) that doesn't flash the loading state
+  const load = async (quiet = false) => {
     const id = ++reqId.current
-    setLoading(true)
+    if (!quiet) setLoading(true)
     try {
       const det = detector !== ALL ? `&detector=${encodeURIComponent(detector)}` : ''
       const [g, a, h, t] = await Promise.all([
@@ -99,7 +100,13 @@ export function useDashboardData(date: string, detector: string) {
     if (!isToday) { setStream('off'); return }
     setStream('connecting')
     const sse = new EventSource(`${API_URL}/api/events?includeUngated=true`)
-    sse.onopen = () => setStream('live')
+    // The Vercel /api rewrite closes the stream every ~150 s; after a reconnect, re-read so an
+    // event sent during the gap isn't missed.
+    let dropped = false
+    sse.onopen = () => {
+      setStream('live')
+      if (dropped) { dropped = false; void load(true) }
+    }
     sse.onmessage = (ev) => {
       try {
         const p = JSON.parse(ev.data)
@@ -120,14 +127,16 @@ export function useDashboardData(date: string, detector: string) {
         }
       } catch { /* ignore a malformed frame */ }
     }
-    sse.onerror = () => setStream('retrying')
+    sse.onerror = () => { dropped = true; setStream('retrying') }
     const poll = setInterval(async () => {
       try {
         const r = await axios.get(`${API_URL}/api/live-pnl`)
         if (r.data?.data) setLivePnl((prev) => ({ ...prev, ...r.data.data }))
       } catch { /* the stream state already shows trouble */ }
     }, 2500)
-    return () => { sse.close(); clearInterval(poll) }
+    // Polling fallback: re-read today's data every 30 s whatever the stream does.
+    const refresh = setInterval(() => { void load(true) }, 30000)
+    return () => { sse.close(); clearInterval(poll); clearInterval(refresh) }
   }, [isToday, detector])
 
   const detectors = useMemo(() => Array.from(new Set(allHistory.map((t) => t.detectorName).filter(Boolean))).sort(), [allHistory])
