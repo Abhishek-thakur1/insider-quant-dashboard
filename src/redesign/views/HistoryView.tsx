@@ -59,10 +59,10 @@ export default function HistoryView({ gated, all, heatmap, date, setDate, onSele
       </div>
       <section className="card" aria-labelledby="h-heat">
         <h2 id="h-heat" style={{ marginBottom: 'var(--s3)' }}>Activity, last 28 trading days</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0,1fr))', gap: 6, maxWidth: 420 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))', gap: 6, maxWidth: 560 }}>
           {days.map((h) => (
             <button key={h.date} onClick={() => setDate(String(h.date).slice(0, 10))} title={`${String(h.date).slice(0, 10)}: ${h.count} closed trades`} aria-label={`${String(h.date).slice(0, 10)}, ${h.count} closed trades`}
-              style={{ aspectRatio: '1', minHeight: 32, borderRadius: 8, border: String(h.date).slice(0, 10) === date ? '2px solid var(--fg)' : '1px solid var(--line)', background: `color-mix(in srgb, var(--accent) ${Math.round((h.count / max) * 80)}%, var(--surface-2))`, cursor: 'pointer' }} />
+              style={{ aspectRatio: '1', minHeight: 44, minWidth: 44, borderRadius: 8, border: String(h.date).slice(0, 10) === date ? '2px solid var(--fg)' : '1px solid var(--line)', background: `color-mix(in srgb, var(--accent) ${Math.round((h.count / max) * 80)}%, var(--surface-2))`, cursor: 'pointer' }} />
           ))}
         </div>
         <p className="muted" style={{ margin: 'var(--s2) 0 0', fontSize: 'var(--t-xs)' }}>Closed paper trades per day. Tap a day to open it.</p>
