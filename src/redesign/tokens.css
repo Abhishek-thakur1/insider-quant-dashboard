@@ -1,0 +1,48 @@
+/* Ninefifteen redesign — design tokens (owner-approved 2026-10-23).
+   Dark by default, one calm accent, teal/coral gain/loss (never colour alone),
+   tabular figures. Fonts are bundled (@fontsource), no external font call. */
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/fraunces/latin-600.css";
+
+.nf {
+  --bg: #0e1319; --surface: #151c24; --surface-2: #1b2430; --line: #26313e;
+  --fg: #e3e9f0; --muted: #8b98a8; --accent: #6ea8e6;
+  --gain: #3cc2ad; --loss: #f0875f; --warn: #e0a83a;
+  --display: "Fraunces", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --r-s: 8px; --r-m: 14px; --r-l: 20px;
+  --e1: 0 1px 2px rgb(0 0 0 / .25); --e2: 0 6px 24px rgb(0 0 0 / .28);
+  color-scheme: dark;
+  background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body);
+  min-height: 100dvh;
+}
+.nf[data-theme="light"] {
+  --bg: #f4f6f8; --surface: #ffffff; --surface-2: #eef1f5; --line: #d9dee6;
+  --fg: #16202b; --muted: #5b6878; --accent: #2f6fb2;
+  --gain: #1c8a7a; --loss: #c2552e; --warn: #a86b00;
+  --e1: 0 1px 2px rgb(16 32 48 / .08); --e2: 0 6px 24px rgb(16 32 48 / .10);
+  color-scheme: light;
+}
+.nf *, .nf *::before, .nf *::after { box-sizing: border-box }
+.nf .num { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.nf .gain { color: var(--gain) } .nf .loss { color: var(--loss) } .nf .warn { color: var(--warn) } .nf .muted { color: var(--muted) }
+.nf h1, .nf h2 { font-family: var(--display); font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: balance }
+.nf .lbl { font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
+.nf .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--e1); padding: 16px; min-width: 0 }
+.nf .card.click { cursor: pointer; transition: border-color .15s, transform .15s }
+.nf .card.click:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)) }
+.nf .pill { display: inline-flex; align-items: center; gap: 6px; font: 500 .74rem var(--mono); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); white-space: nowrap }
+.nf .pill.paper { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent) }
+.nf .chip { font: 500 .7rem var(--mono); padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap }
+.nf .btn { font: 500 .85rem var(--body); color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-s); padding: 7px 12px; cursor: pointer }
+.nf .btn[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)) }
+.nf input, .nf select { font: 500 .85rem var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); padding: 7px 10px; min-width: 0 }
+.nf :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.nf .bar { height: 8px; border-radius: 99px; background: var(--surface-2); position: relative; overflow: hidden }
+.nf .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 99px }
+@media (prefers-reduced-motion: reduce) { .nf * { transition: none !important; animation: none !important } }
