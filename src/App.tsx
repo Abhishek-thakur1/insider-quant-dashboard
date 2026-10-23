@@ -407,9 +407,14 @@ export default function App() {
       }
     }, 2500);
 
+    // Polling fallback: the Vercel /api rewrite closes the event stream after ~150 s, so an
+    // event sent while it reconnects would be missed. Re-read today's data every 30 s.
+    const refresh = setInterval(fetchInitialData, 30000);
+
     return () => {
       sse.close();
       clearInterval(poll);
+      clearInterval(refresh);
     };
   }, [isToday, selectedDetector]);
 
