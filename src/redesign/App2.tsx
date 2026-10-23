@@ -68,7 +68,7 @@ export default function App2() {
             </nav>
             <div style={{ marginTop: 'auto', display: 'grid', gap: 'var(--s2)' }}>
               <span className="pill paper">PAPER TRADING · no proven edge</span>
-              <a href="?view=classic" className="muted" style={{ fontSize: 'var(--t-s)' }}>Classic view</a>
+              <a href="?view=classic" className="muted linkpad" style={{ fontSize: 'var(--t-s)' }}>Classic view</a>
             </div>
           </aside>
 
@@ -79,12 +79,12 @@ export default function App2() {
             <Suspense fallback={<ViewSkeleton />}>
               {view === 'today' && <TodayView d={d} gated={gated} all={all} open={open} now={now} onSelect={setSelected} />}
               {view === 'positions' && <PositionsView open={open} livePnl={d.livePnl} isToday={d.isToday} loading={d.loading} onSelect={setSelected} now={now} />}
-              {view === 'signals' && <SignalsView date={date} isToday={d.isToday} query={q} detector={detector} />}
+              {view === 'signals' && <SignalsView date={date} isToday={d.isToday} query={q} detector={detector} trades={d.allHistory} />}
               {view === 'history' && <HistoryView gated={gated} all={all} heatmap={d.heatmap} date={date} setDate={setDate} onSelect={setSelected} />}
               {view === 'health' && <HealthView health={health} stream={d.stream} updatedAt={d.updatedAt} now={now} market={ist.market} />}
             </Suspense>
             <footer className="nf-foot">
-              <a href="?view=classic" className="muted" style={{ fontSize: 'var(--t-s)', padding: 'var(--s3)' }}>Classic view</a>
+              <a href="?view=classic" className="muted linkpad" style={{ fontSize: 'var(--t-s)', paddingInline: 'var(--s3)' }}>Classic view</a>
             </footer>
           </main>
         </div>
@@ -107,12 +107,12 @@ function TopBar({ ist, stream, updatedAt, now, theme, onTheme }: { ist: ReturnTy
   const open = ist.market === 'Open'
   const s = stream === 'live' ? { icon: <Radio size={13} aria-hidden className="gain pulse" />, text: 'live' } : stream === 'off' ? { icon: <CircleSlash size={13} aria-hidden className="muted" />, text: 'off (not today)' } : { icon: <WifiOff size={13} aria-hidden className="warn" />, text: stream === 'connecting' ? 'connecting' : 'reconnecting' }
   return (
-    <header style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', alignItems: 'center', justifyContent: 'space-between' }}>
+    <header style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', alignItems: 'center', minWidth: 0 }}>
-        <span className="pill" aria-label={`Market ${ist.market}`}><span aria-hidden className={open ? 'gain pulse' : ist.market === 'Pre-open' ? 'warn' : 'muted'}>●</span> {ist.market === 'Holiday' ? 'NSE holiday' : `Market ${ist.market.toLowerCase()}`}</span>
-        <span className="pill num" aria-label={`Time ${ist.time} IST`}><Clock size={13} aria-hidden className="muted" /> {ist.time} IST</span>
-        <span className="pill" aria-label={`Live stream ${s.text}`}>{s.icon} stream {s.text}</span>
-        <span className="pill muted" aria-live="polite">updated {ago(updatedAt, now)}</span>
+        <span className="pill" aria-label={`Market ${ist.market}`}><span aria-hidden className={open ? 'gain pulse' : ist.market === 'Pre-open' ? 'warn' : 'muted'}>●</span> {ist.market === 'Holiday' ? 'NSE holiday' : <><span className="hide-sm">Market </span>{ist.market.toLowerCase()}</>}</span>
+        <span className="pill num" aria-label={`Time ${ist.time} IST`}><Clock size={13} aria-hidden className="muted" /> {ist.time}<span className="hide-sm"> IST</span></span>
+        <span className="pill" aria-label={`Live stream ${s.text}, updated ${ago(updatedAt, now)}`} title={`updated ${ago(updatedAt, now)}`}>{s.icon}<span className="hide-sm">stream {s.text}</span></span>
+        <span className="pill muted hide-sm">updated {ago(updatedAt, now)}</span>
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
         <span className="pill paper">PAPER</span>

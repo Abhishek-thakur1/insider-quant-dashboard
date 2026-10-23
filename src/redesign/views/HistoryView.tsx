@@ -1,19 +1,20 @@
-// History and analytics for a date: totals, cumulative R, per-detector table, activity heatmap,
-// closed trades, CSV export. Lazy-loaded. Paper trading; every row shows n.
-import { lazy, Suspense, useMemo, useState } from 'react'
-import { calcStats, type Trade } from '../data'
+// History and analytics: equity curve over the latest closed trades (R or ₹, with ranges), totals
+// and per-detector bars for the selected date, activity heatmap, closed trades, CSV export.
+// Lazy-loaded. Paper trading; every detector row shows n.
+import { useMemo, useState } from 'react'
+import { DetectorBars, EquityCurve } from '../charts'
+import { calcStats, useRecentHistory, type Trade } from '../data'
 import { signedR, signedRupees, tone } from '../format.ts'
 import { byDetector } from '../logic.ts'
-import { Reveal } from '../motion'
+import { Reveal, Skeleton } from '../motion'
 import { Empty, TradeList } from '../ui'
-
-const HistoryChart = lazy(() => import('../HistoryChart'))
 
 export default function HistoryView({ gated, all, heatmap, date, setDate, onSelect }: { gated: Trade[]; all: Trade[]; heatmap: { date: string; count: number }[]; date: string; setDate: (s: string) => void; onSelect: (t: Trade) => void }) {
   const [scope, setScope] = useState<'gated' | 'all'>('gated')
   const rows = scope === 'gated' ? gated : all
   const s = calcStats(rows)
   const det = useMemo(() => byDetector(rows), [rows])
+  const recent = useRecentHistory(scope === 'gated')
   const exportCsv = () => {
     const head = ['Symbol', 'Side', 'Duration', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Capital Gated', 'Unconstrained Size', 'Actual Size', 'Entry Price', 'Exit Price', 'PnL', 'R-Multiple', 'Exit Reason']
     const lines = rows.map((t) => [t.symbol, t.side, t.durationClass || 'INTRADAY', new Date(t.timestamp).toISOString(), t.exitTimestamp ? new Date(t.exitTimestamp).toISOString() : '', t.detectorName, t.regimeClass || 'UNIVERSAL', t.gated ? 'YES' : 'NO', t.capitalGated ? 'YES' : 'NO', t.size, t.actualSize ?? t.size, t.entryPrice, t.exitPrice ?? '', t.pnl ?? 0, t.r_multiple ?? '', t.exitReason ?? ''].join(','))
@@ -44,21 +45,16 @@ export default function HistoryView({ gated, all, heatmap, date, setDate, onSele
         </Reveal>))}
       </div>
       <div className="nf-two">
-        <section className="card" aria-labelledby="h-curve" style={{ minHeight: 260, display: 'grid', gap: 'var(--s2)' }}>
-          <h2 id="h-curve">Cumulative R, {date}</h2>
-          <Suspense fallback={<p className="muted">Loading chart…</p>}><HistoryChart trades={rows} /></Suspense>
+        <section className="card" aria-labelledby="h-curve" style={{ display: 'grid', gap: 'var(--s2)' }}>
+          <div className="card-head" style={{ marginBottom: 0 }}><h2 id="h-curve">Equity curve · paper</h2><span className="chip">{scope === 'gated' ? 'alerted' : 'all recorded'}</span></div>
+          {recent.loading && !recent.data ? <Skeleton h={260} r={14} />
+            : recent.error && !recent.data ? <Empty icon={<span>!</span>} text="Couldn't load recent history." sub={recent.error} />
+              : <EquityCurve trades={recent.data ?? []} note={`Latest ${recent.data?.length ?? 0} closed trades across days (the API returns at most 200; a longer history needs an API change, request listed). Ranges count back from the latest trade.`} />}
         </section>
         <section className="card" aria-labelledby="h-det">
-          <h2 id="h-det" style={{ marginBottom: 'var(--s3)' }}>By detector</h2>
-          {det.length === 0 ? <Empty icon={<span>∅</span>} text="No closed trades." /> : (
-            <table className="num" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--t-s)' }}>
-              <thead><tr className="lbl"><th style={{ textAlign: 'left' }}>Detector</th><th>n</th><th>Win</th><th style={{ textAlign: 'right' }}>Total R</th></tr></thead>
-              <tbody>{det.map((r) => (
-                <tr key={r.detector} style={{ borderTop: '1px solid var(--line)' }}>
-                  <td style={{ padding: '8px 0', fontFamily: 'var(--body)' }}>{r.detector}</td><td style={{ textAlign: 'center' }}>{r.n}</td><td style={{ textAlign: 'center' }}>{r.winRate.toFixed(0)}%</td><td style={{ textAlign: 'right' }} className={tone(r.totalR)}>{signedR(r.totalR)}</td>
-                </tr>))}</tbody>
-            </table>)}
-          <p className="muted" style={{ margin: 'var(--s2) 0 0', fontSize: 'var(--t-xs)' }}>Every row shows n. Small samples say nothing about an edge.</p>
+          <div className="card-head"><h2 id="h-det">By detector, {date}</h2><span className="chip">n = {s.total}</span></div>
+          {det.length === 0 ? <Empty icon={<span>∅</span>} text="No closed trades on this date." /> : <DetectorBars rows={det} />}
+          <p className="muted" style={{ margin: 'var(--s3) 0 0', fontSize: 'var(--t-xs)' }}>Total R per detector, with n on every row. Fewer than 30 trades says nothing about an edge.</p>
         </section>
       </div>
       <section className="card" aria-labelledby="h-heat">

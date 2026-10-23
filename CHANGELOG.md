@@ -2,6 +2,22 @@
 
 Newest first.
 
+## 2026-10-23: UI polish stage 2, part 2: graphics (`feat/ui-stage2`; preview only, not merged)
+- **`charts.tsx`:** hand-built SVG charts, no chart library.
+  - **Equity curve:** R or ₹, 1D/1W/1M/All, gradient area, crosshair tooltip, arrow-key stepping, wipe-in.
+  - **Detector bars:** n on every row and a small-sample chip.
+  - **Filter funnel:** fires → rejected by gate → passed (and why not sent) → alerted.
+  - **Signal timeline:** score by time of day against the threshold.
+  - **Heat tiles:** names that fired.
+- **Signals view:** timeline, funnel, heat tiles and the feed. **History view:** equity curve over the latest 200 closed trades, plus detector bars.
+- The redesign no longer uses Recharts; `HistoryChart.tsx` is removed. Recharts is now only in the classic chunk, and the classic view's total download is unchanged.
+- **Fixes from the part-1 preview:**
+  - the sparkline draw-in (now a clip wipe);
+  - a compact top bar below 560 px;
+  - 44 px "Classic view" links;
+  - valid list markup in the feed.
+- **First-load JS:** 136.0 → 139.3 kB gzipped (+3.3 kB); the charts chunk adds 4.2 kB when loaded.
+
 ## 2026-10-23: UI polish stage 2, part 1 (`feat/ui-stage2`; preview only, not merged)
 - **Design system v2** (`tokens.css`): spacing, type, radius and elevation scales; glass cards; motion keyframes; mobile-first layout with 44 px touch targets and safe-area insets; reduced-motion support.
 - **Tested logic:** `format.ts` and `logic.ts`, with 15 new tests (24 in total).

@@ -25,14 +25,21 @@ The routes use a query string and a hash only, never a path. `vercel.json` has n
 | `logic.ts` | Pure data shaping: stop-to-target progress, implied price, cumulative R and ₹ series, ranges, per-detector rows with a small-sample flag (n < 30), filter funnel, heat tiles. Tested in `tests/logic.test.mjs` |
 | `data.ts` | Data hooks. The existing endpoints, plus `/api/signals` and `/api/health` (engine PR #24), each re-read every 30 s |
 | `motion.tsx`, `ui.tsx`, `Sparkline.tsx` | Count-up, change flash, skeleton, staggered reveal; empty states and trade rows; a tiny SVG sparkline |
+| `charts.tsx` | Hand-built SVG charts, loaded only with the views that use them: equity curve (R or ₹, ranges, crosshair tooltip, arrow-key stepping), detector bars (n on every row, small-sample chip), filter funnel, signal timeline (outcome shown by shape as well as colour), heat tiles |
 | `App2.tsx` | Shell (top bar, state banner, nav), Today, Positions, trade drawer |
-| `views/*View.tsx` | Signals, History and Health, lazy-loaded |
+| `views/*View.tsx` | Signals (timeline, funnel, heat tiles, feed), History (equity curve, detector bars, heatmap, list, CSV) and Health, lazy-loaded |
 
 **Rules:**
 - Real data only; a view that needs data the API lacks says so and lists an API request.
 - Every P&L view says paper.
 - No external network calls; fonts are bundled.
-- Charts are hand-built SVG. Recharts is used only by the classic view and `HistoryChart` until stage 2 replaces it.
+- Charts are hand-built SVG. Recharts is used only by the classic view, so it's bundled only into the classic chunk.
+- **API requests (not done here):**
+  - the watchlist with day change per symbol, so the heat tiles can colour the whole watchlist;
+  - the Nifty level and day change for the top bar;
+  - a `since`/`limit` on `/api/trades/history`, which is capped at 200;
+  - publish `ticksPer5m`;
+  - the filter's score breakdown per trade, for the trade drawer.
 
 ## API access, kept as is
 - **`src/apiBase.ts`, `resolveApiBase()`:** on an HTTPS page, an `http://` `VITE_API_URL` is ignored and the relative `/api` route is used, through the Vercel rewrite in `vercel.json`. This avoids mixed content.

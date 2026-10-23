@@ -113,10 +113,17 @@
 @keyframes nf-flash-neutral { 0% { background: color-mix(in srgb, var(--accent) 30%, transparent) } 100% { background: transparent } }
 .nf .flash-up { animation: nf-flash-gain 1.2s var(--ease) } .nf .flash-down { animation: nf-flash-loss 1.2s var(--ease) } .nf .flash-same { animation: nf-flash-neutral 1.2s var(--ease) }
 .nf .flash-up, .nf .flash-down, .nf .flash-same { border-radius: 6px }
-@keyframes nf-draw { from { stroke-dashoffset: var(--len, 1000) } to { stroke-dashoffset: 0 } }
-.nf .draw { stroke-dasharray: var(--len, 1000); animation: nf-draw var(--d-slow) var(--ease) both }
+/* chart draw-in: a left-to-right wipe (works with non-scaling strokes, unlike dash offsets) */
+@keyframes nf-wipe { from { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0 0 0 0) } }
+.nf .wipe { animation: nf-wipe var(--d-slow) var(--ease) both }
+@keyframes nf-grow { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+.nf .grow { transform-origin: left center; animation: nf-grow var(--d-slow) var(--ease) both }
+@keyframes nf-rise { from { transform: scaleY(0) } to { transform: scaleY(1) } }
+.nf .rise { transform-box: fill-box; transform-origin: bottom; animation: nf-rise var(--d-slow) var(--ease) both }
+.nf .linkpad { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 4px }
+@media (max-width: 559px) { .nf .hide-sm { display: none !important } .nf .pill { padding: 4px 8px } }
 @keyframes nf-fade-up { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
 .nf .fade-in { animation: nf-fade-up .45s var(--ease) both }
 @keyframes nf-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
 .nf .pulse { animation: nf-pulse 1.8s ease-in-out infinite }
-@media (prefers-reduced-motion: reduce) { .nf *, .nf *::before { transition: none !important; animation: none !important } .nf .draw { stroke-dasharray: none } }
+@media (prefers-reduced-motion: reduce) { .nf *, .nf *::before { transition: none !important; animation: none !important } }
