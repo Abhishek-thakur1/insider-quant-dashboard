@@ -22,7 +22,7 @@ The routes use a query string and a hash only, never a path. `vercel.json` has n
 |---|---|
 | `tokens.css` | Design system v2: colour, 4 px spacing, radius, elevation, type scale, glass cards, motion keyframes, layout (bottom nav on phone, sidebar from 1024 px, auto-fit grid, masonry), 44 px touch targets, `prefers-reduced-motion` guard |
 | `format.ts` | ₹, R and % formatting with sign and arrow (never colour alone), Indian grouping, IST clock, market state, 15:15 countdown. Tested in `tests/format.test.mjs` |
-| `logic.ts` | Pure data shaping: stop-to-target progress, implied price, cumulative R and ₹ series, ranges, per-detector rows with a small-sample flag (n < 30), filter funnel, heat tiles. Tested in `tests/logic.test.mjs` |
+| `logic.ts` | Pure data shaping: alerted vs recorded-only (`wasAlerted`, signal log first) and the not-alerted reason, stop-to-target progress, implied price, cumulative R and ₹ series, ranges, per-detector rows with a small-sample flag (n < 30), filter funnel, heat tiles. Tested in `tests/logic.test.mjs` |
 | `data.ts` | Data hooks. The existing endpoints, plus `/api/signals` and `/api/health` (engine PR #24), each re-read every 30 s |
 | `motion.tsx`, `ui.tsx`, `Sparkline.tsx` | Count-up, change flash, skeleton, staggered reveal; empty states and trade rows; a tiny SVG sparkline |
 | `charts.tsx` | Hand-built SVG charts, loaded only with the views that use them: equity curve (R or ₹, ranges, crosshair tooltip, arrow-key stepping), detector bars (n on every row, small-sample chip), filter funnel, signal timeline (outcome shown by shape as well as colour), heat tiles |

@@ -29,7 +29,8 @@ export const SideChip = ({ side }: { side: string }) => (
   <span className={`chip ${side === 'LONG' ? 'gain' : 'loss'}`}>{side === 'LONG' ? <ArrowUpRight size={12} aria-hidden /> : <ArrowDownRight size={12} aria-hidden />}{side}</span>
 )
 
-export function TradeList({ trades, onSelect, empty }: { trades: Trade[]; onSelect: (t: Trade) => void; empty: React.ReactNode }) {
+/** `tag` overrides the per-row status chip (Today passes the alerted / rejection reason). */
+export function TradeList({ trades, onSelect, empty, tag }: { trades: Trade[]; onSelect: (t: Trade) => void; empty: React.ReactNode; tag?: (t: Trade) => React.ReactNode }) {
   if (!trades.length) return <>{empty}</>
   return (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'var(--s2)' }}>
@@ -39,7 +40,7 @@ export function TradeList({ trades, onSelect, empty }: { trades: Trade[]; onSele
             <span style={{ minWidth: 0, display: 'grid', gap: 2 }}>
               <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ fontWeight: 600 }}>{shortSymbol(t.symbol)}</span><SideChip side={t.side} />
-                {t.gated ? <span className="chip accent">alerted</span> : <span className="chip muted">recorded</span>}
+                {tag ? tag(t) : t.gated ? <span className="chip accent">alerted</span> : <span className="chip muted">not alerted</span>}
               </span>
               <span className="muted" style={{ fontSize: 'var(--t-xs)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.detectorName} · {istTime(t.timestamp)}{t.exitReason ? ` · ${t.exitReason}` : ''}</span>
             </span>
