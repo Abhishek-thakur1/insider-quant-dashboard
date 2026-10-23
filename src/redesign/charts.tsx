@@ -177,7 +177,7 @@ export function SignalTimeline({ rows }: { rows: SignalRow[] }) {
       {W > 0 && (
         <svg width={W} height={H} role="img" aria-label={`${scored.length} scored fires between 09:15 and 15:30${th != null ? `; alert threshold ${th}` : ''}. ${rows.filter((r) => r.alerted).length} alerted.`} style={{ display: 'block' }}>
           {[0, 25, 50, 75, 100].map((v) => <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeDasharray="2 4" /><text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="var(--muted)" fontFamily="var(--mono)">{v}</text></g>)}
-          {['09:15', '11:00', '13:00', '15:30'].map((t) => { const [h, m] = t.split(':').map(Number); const xx = L + ((h! * 60 + m! - OPEN) / (CLOSE - OPEN)) * (W - L - R); return <text key={t} x={xx} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--muted)" fontFamily="var(--mono)">{t}</text> })}
+          {['09:15', '11:00', '13:00', '15:30'].map((t) => { const [h, m] = t.split(':').map(Number); const xx = L + ((h! * 60 + m! - OPEN) / (CLOSE - OPEN)) * (W - L - R); return <text key={t} x={xx} y={H - 6} textAnchor={t === '09:15' ? 'start' : t === '15:30' ? 'end' : 'middle'} fontSize="10" fill="var(--muted)" fontFamily="var(--mono)">{t}</text> })}
           {th != null && <g><line x1={L} x2={W - R} y1={y(th)} y2={y(th)} stroke="var(--accent)" strokeDasharray="6 4" /><text x={W - R} y={y(th) - 5} textAnchor="end" fontSize="10" fill="var(--accent)" fontFamily="var(--mono)">threshold {th}</text></g>}
           {scored.map((r) => {
             const cx = x(r.firedAt), cy = y(r.score as number)

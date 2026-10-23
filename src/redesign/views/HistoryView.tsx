@@ -27,7 +27,7 @@ export default function HistoryView({ gated, all, heatmap, date, setDate, onSele
   const days = heatmap.slice(0, 28).reverse()
   const kpis = [
     { label: 'Total R · paper', value: signedR(s.totalR), cls: tone(s.totalR), sub: `n = ${s.total}` },
-    { label: 'Average R per trade', value: signedR(s.avgR), cls: tone(s.avgR), sub: s.total < 30 ? 'small sample, not an edge' : `n = ${s.total}` },
+    { label: 'Average R per trade', value: signedR(s.avgR), cls: tone(s.avgR), sub: s.total === 0 ? 'no trades' : s.total < 30 ? `n = ${s.total} · small sample, not an edge` : `n = ${s.total}` },
     { label: 'P&L · paper', value: signedRupees(s.pnl), cls: tone(s.pnl), sub: `${s.wins} wins of ${s.total}` },
   ]
   return (
