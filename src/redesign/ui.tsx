@@ -18,7 +18,7 @@ export function Empty({ icon, text, sub }: { icon: React.ReactNode; text: string
 
 export function ViewSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading" style={{ display: 'grid', gap: 'var(--s4)' }}>
+    <div role="status" aria-busy="true" aria-label="Loading" style={{ display: 'grid', gap: 'var(--s4)' }}>
       <div className="nf-grid">{[0, 1, 2, 3].map((i) => <div key={i} className="card" style={{ display: 'grid', gap: 10 }}><Skeleton h={12} w="40%" /><Skeleton h={30} w="70%" /><Skeleton h={36} /><Skeleton h={12} w="55%" /></div>)}</div>
       <div className="nf-two">{[0, 1].map((i) => <div key={i} className="card" style={{ display: 'grid', gap: 10 }}><Skeleton h={18} w="35%" />{[0, 1, 2].map((j) => <Skeleton key={j} h={52} r={14} />)}</div>)}</div>
     </div>

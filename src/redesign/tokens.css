@@ -20,7 +20,7 @@
   --display: "Fraunces", Georgia, serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-  --t-xs: .72rem; --t-s: .8rem; --t-m: .9rem; --t-l: 1.05rem; --t-xl: 1.3rem; --t-2xl: 1.75rem; --t-3xl: 2.25rem;
+  --t-xs: .78rem; --t-s: .8rem; --t-m: .9rem; --t-l: 1.05rem; --t-xl: 1.3rem; --t-2xl: 1.75rem; --t-3xl: 2.25rem;
   /* spacing (4 px grid) */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px;
   /* radius */
@@ -64,7 +64,7 @@
 
 .nf .pill { display: inline-flex; align-items: center; gap: 6px; font: 500 var(--t-xs) var(--mono); padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); white-space: nowrap }
 .nf .pill.paper { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: var(--warn-bg) }
-.nf .chip { display: inline-flex; align-items: center; gap: 4px; font: 500 .7rem var(--mono); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap; vertical-align: middle }
+.nf .chip { display: inline-flex; align-items: center; gap: 4px; font: 500 .75rem var(--mono); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap; vertical-align: middle }
 .nf .chip.gain { background: var(--gain-bg); border-color: transparent } .nf .chip.loss { background: var(--loss-bg); border-color: transparent }
 .nf .chip.accent { background: var(--accent-bg); color: var(--accent); border-color: transparent } .nf .chip.warn { background: var(--warn-bg); border-color: transparent }
 .nf .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; font: 500 var(--t-m) var(--body); color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-m); padding: 8px 14px; cursor: pointer; transition: background var(--d-fast), border-color var(--d-fast) }
@@ -83,7 +83,7 @@
 .nf-side { display: none }
 .nf-main { display: grid; gap: var(--s4); align-content: start; min-width: 0; padding: var(--s4) max(var(--s4), env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(var(--s4), env(safe-area-inset-left, 0px)); max-width: 1680px; width: 100%; margin-inline: auto }
 .nf-bottom { position: fixed; inset-inline: 0; bottom: 0; z-index: 20; display: grid; background: var(--glass); backdrop-filter: blur(14px); border-top: 1px solid var(--line); padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
-.nf-bottom button { min-height: 52px; background: none; border: 0; display: grid; justify-items: center; align-content: center; gap: 2px; font: 600 .68rem var(--body); color: var(--muted); cursor: pointer; border-radius: var(--r-m) }
+.nf-bottom button { min-height: 52px; background: none; border: 0; display: grid; justify-items: center; align-content: center; gap: 2px; font: 600 .75rem var(--body); color: var(--muted); cursor: pointer; border-radius: var(--r-m) }
 .nf-bottom button[aria-current="page"] { color: var(--accent) }
 .nf-foot { display: flex; justify-content: center; padding-top: var(--s2) }
 .nf-grid { display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)) }

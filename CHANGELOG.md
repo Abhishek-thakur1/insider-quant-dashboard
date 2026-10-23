@@ -2,6 +2,13 @@
 
 Newest first.
 
+## 2026-10-23: UI polish stage 2, part 3: accessibility and quality (`feat/ui-stage2`; preview only, not merged)
+- **Contrast:** every text token is ≥ 4.5:1 on every surface in both themes (light gain `#126f63`; the faint tokens raised).
+- **Touch targets:** the segmented toggles are now 44 px.
+- **Small text:** raised to ≥ 12 px (labels, chips, bottom navigation, tile captions, chart axes).
+- **ARIA:** `aria-label`s on role-less spans became visually hidden text; the stat grid and the loading skeleton got roles.
+- **Lighthouse** on the part-2 preview, through the real `/api`, before these fixes: mobile 97 / 96 / 96, desktop 100 / 100 / 100 (performance / accessibility / best practices). These fixes address the two mobile findings, `aria-prohibited-attr` and `font-size`.
+
 ## 2026-10-23: UI polish stage 2, part 2: graphics (`feat/ui-stage2`; preview only, not merged)
 - **`charts.tsx`:** hand-built SVG charts, no chart library.
   - **Equity curve:** R or ₹, 1D/1W/1M/All, gradient area, crosshair tooltip, arrow-key stepping, wipe-in.

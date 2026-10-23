@@ -75,11 +75,11 @@ export function EquityCurve({ trades, note }: { trades: Trade[]; note?: string }
             <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={col} stopOpacity=".32" /><stop offset="1" stopColor={col} stopOpacity="0" /></linearGradient></defs>
             {ticks(lo, hi).map((v) => (
               <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeDasharray="2 4" />
-                <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" fontFamily="var(--mono)">{axis(v)}</text></g>
+                <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">{axis(v)}</text></g>
             ))}
             <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} stroke="var(--line-strong)" />
             {[0, Math.floor((pts.length - 1) / 2), pts.length - 1].map((i) => (
-              <text key={i} x={x(i)} y={H - 6} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'} fontSize="11" fill="var(--muted)" fontFamily="var(--mono)">{xl(pts[i]!.x)}</text>
+              <text key={i} x={x(i)} y={H - 6} textAnchor={i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'} fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">{xl(pts[i]!.x)}</text>
             ))}
             <g className="wipe" key={`${unit}-${range}`}>
               <path d={`${line}L${x(pts.length - 1)},${y(lo)}L${x(0)},${y(lo)}Z`} fill={`url(#${gid})`} />
@@ -176,9 +176,9 @@ export function SignalTimeline({ rows }: { rows: SignalRow[] }) {
     <div ref={ref} style={{ position: 'relative', minHeight: H }}>
       {W > 0 && (
         <svg width={W} height={H} role="img" aria-label={`${scored.length} scored fires between 09:15 and 15:30${th != null ? `; alert threshold ${th}` : ''}. ${rows.filter((r) => r.alerted).length} alerted.`} style={{ display: 'block' }}>
-          {[0, 25, 50, 75, 100].map((v) => <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeDasharray="2 4" /><text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="var(--muted)" fontFamily="var(--mono)">{v}</text></g>)}
-          {['09:15', '11:00', '13:00', '15:30'].map((t) => { const [h, m] = t.split(':').map(Number); const xx = L + ((h! * 60 + m! - OPEN) / (CLOSE - OPEN)) * (W - L - R); return <text key={t} x={xx} y={H - 6} textAnchor={t === '09:15' ? 'start' : t === '15:30' ? 'end' : 'middle'} fontSize="10" fill="var(--muted)" fontFamily="var(--mono)">{t}</text> })}
-          {th != null && <g><line x1={L} x2={W - R} y1={y(th)} y2={y(th)} stroke="var(--accent)" strokeDasharray="6 4" /><text x={W - R} y={y(th) - 5} textAnchor="end" fontSize="10" fill="var(--accent)" fontFamily="var(--mono)">threshold {th}</text></g>}
+          {[0, 25, 50, 75, 100].map((v) => <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeDasharray="2 4" /><text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">{v}</text></g>)}
+          {['09:15', '11:00', '13:00', '15:30'].map((t) => { const [h, m] = t.split(':').map(Number); const xx = L + ((h! * 60 + m! - OPEN) / (CLOSE - OPEN)) * (W - L - R); return <text key={t} x={xx} y={H - 6} textAnchor={t === '09:15' ? 'start' : t === '15:30' ? 'end' : 'middle'} fontSize="12" fill="var(--muted)" fontFamily="var(--mono)">{t}</text> })}
+          {th != null && <g><line x1={L} x2={W - R} y1={y(th)} y2={y(th)} stroke="var(--accent)" strokeDasharray="6 4" /><text x={W - R} y={y(th) - 5} textAnchor="end" fontSize="12" fill="var(--accent)" fontFamily="var(--mono)">threshold {th}</text></g>}
           {scored.map((r) => {
             const cx = x(r.firedAt), cy = y(r.score as number)
             const shape = r.alerted ? <circle cx={cx} cy={cy} r="6.5" fill="var(--info)" stroke="var(--surface)" strokeWidth="1.5" />
@@ -215,7 +215,7 @@ export function HeatTiles({ tiles }: { tiles: Tile[] }) {
             aria-label={`${shortSymbol(t.symbol)}: ${t.fires} fire${t.fires === 1 ? '' : 's'}${t.alerted ? ', alerted' : ''}${v == null ? '' : `, closed-trade return ${signedPct(v)}`}`}>
             <span style={{ fontWeight: 600, fontSize: 'var(--t-s)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shortSymbol(t.symbol)}</span>
             <span className="num" style={{ fontSize: 'var(--t-s)' }}>{v == null ? <span className="muted">no close</span> : `${v >= 0 ? '▲' : '▼'} ${signedPct(v, 2)}`}</span>
-            <span className="muted" style={{ fontSize: '.66rem' }}>{t.fires}× fired{t.bestScore != null ? ` · best ${t.bestScore}` : ''}{t.alerted ? ' · alerted' : ''}</span>
+            <span className="muted" style={{ fontSize: 'var(--t-xs)' }}>{t.fires}× fired{t.bestScore != null ? ` · best ${t.bestScore}` : ''}{t.alerted ? ' · alerted' : ''}</span>
           </li>
         )
       })}

@@ -66,7 +66,7 @@ function SignalItem({ r }: { r: SignalRow }) {
         <span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}><span style={{ fontWeight: 600 }}>{shortSymbol(r.symbol)}</span><SideChip side={r.side} /><Outcome r={r} /></span>
         <span className="muted" style={{ fontSize: 'var(--t-xs)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.detector}{r.marketRegime ? ` · ${r.marketRegime}` : ''}{r.dataQuality.length ? ` · ${r.dataQuality.join(', ')}` : ''}</span>
       </span>
-      <span style={{ display: 'grid', justifyItems: 'end', gap: 4, minWidth: 64 }} aria-label={s == null ? 'no score' : `score ${s} of threshold ${th ?? '—'}`}>
+      <span style={{ display: 'grid', justifyItems: 'end', gap: 4, minWidth: 64 }}><span className="sr">{s == null ? 'no score' : `score ${s} of threshold ${th ?? 'none'}`}</span>
         <span className="num" style={{ fontSize: 'var(--t-l)' }}>{s ?? '—'}<span className="muted" style={{ fontSize: 'var(--t-xs)' }}>/{th ?? '—'}</span></span>
         {s != null && th != null && <span className="bar" style={{ width: 64, height: 6 }}><i style={{ width: `${Math.min(100, s)}%`, background: s >= th ? 'var(--gain)' : 'var(--muted)' }} /><span aria-hidden style={{ position: 'absolute', left: `${th}%`, top: -2, width: 2, height: 10, background: 'var(--fg)' }} /></span>}
       </span>

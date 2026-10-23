@@ -109,9 +109,9 @@ function TopBar({ ist, stream, updatedAt, now, theme, onTheme }: { ist: ReturnTy
   return (
     <header style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', alignItems: 'center', minWidth: 0 }}>
-        <span className="pill" aria-label={`Market ${ist.market}`}><span aria-hidden className={open ? 'gain pulse' : ist.market === 'Pre-open' ? 'warn' : 'muted'}>●</span> {ist.market === 'Holiday' ? 'NSE holiday' : <><span className="hide-sm">Market </span>{ist.market.toLowerCase()}</>}</span>
-        <span className="pill num" aria-label={`Time ${ist.time} IST`}><Clock size={13} aria-hidden className="muted" /> {ist.time}<span className="hide-sm"> IST</span></span>
-        <span className="pill" aria-label={`Live stream ${s.text}, updated ${ago(updatedAt, now)}`} title={`updated ${ago(updatedAt, now)}`}>{s.icon}<span className="hide-sm">stream {s.text}</span></span>
+        <span className="pill"><span className="sr">Market {ist.market}. </span><span aria-hidden className={open ? 'gain pulse' : ist.market === 'Pre-open' ? 'warn' : 'muted'}>●</span> {ist.market === 'Holiday' ? 'NSE holiday' : <><span className="hide-sm">Market </span>{ist.market.toLowerCase()}</>}</span>
+        <span className="pill num"><Clock size={13} aria-hidden className="muted" /> {ist.time}<span className="hide-sm"> IST</span></span>
+        <span className="pill" title={`updated ${ago(updatedAt, now)}`}>{s.icon}<span className="sr">Live stream {s.text}, updated {ago(updatedAt, now)}. </span><span className="hide-sm">stream {s.text}</span></span>
         <span className="pill muted hide-sm">updated {ago(updatedAt, now)}</span>
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
@@ -182,7 +182,7 @@ function TodayView({ d, gated, all, open, now, onSelect }: { d: ReturnType<typeo
   if (d.loading && !d.updatedAt) return <ViewSkeleton />
   return (
     <>
-      <div className="nf-grid" aria-label="Today's paper P&L">
+      <div className="nf-grid" role="group" aria-label="Today's paper P&L">
         <StatCard i={0} label="Gated P&L · alerted · paper" value={g.pnl} format={signedRupees} spark={cumulative(gated, 'pnl')} sparkLabel="Gated cumulative P&L today"
           sub={g.total ? <>{signedR(g.totalR)} · {g.total} trade{g.total === 1 ? '' : 's'} · best {g.best === null ? '—' : signedR(g.best)} · worst {g.worst === null ? '—' : signedR(g.worst)}</> : 'No alerted trades closed yet'} />
         <StatCard i={1} label="All recorded P&L · paper" value={a.pnl} format={signedRupees} spark={cumulative(all, 'pnl')} sparkLabel="All recorded cumulative P&L today"
