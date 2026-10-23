@@ -1,5 +1,5 @@
 // Ninefifteen redesign — stage 1: shell + tokens, Today, Positions, History at parity with
-// the classic dashboard (the default route; this view is at #new). Existing endpoints only. Paper trading.
+// the classic dashboard. The default route since 2026-10-23 (classic: ?view=classic). Existing endpoints only. Paper trading.
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { MotionConfig, AnimatePresence, motion } from 'framer-motion'
 import { CalendarDays, History as HistoryIcon, LayoutDashboard, Layers, Moon, Search, Sun, X } from 'lucide-react'
@@ -47,7 +47,7 @@ export default function App2() {
             .nf-shell { grid-template-columns: minmax(0,1fr) }
             @media (min-width: 1024px) { .nf-shell { grid-template-columns: 232px minmax(0,1fr) !important } .nf-side { display: flex !important } .nf-bottom { display: none !important } }
             .nf-main { padding: 16px max(16px, env(safe-area-inset-right,0px)) 96px max(16px, env(safe-area-inset-left,0px)); display: grid; gap: 16px; align-content: start; min-width: 0 }
-            @media (min-width: 1024px) { .nf-main { padding: 24px 32px 40px } }
+            @media (min-width: 1024px) { .nf-main { padding: 24px 32px 40px } .nf-foot { display: none !important } }
             .nf-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) }
             .nf-two { display: grid; gap: 12px; grid-template-columns: minmax(0,1fr) } @media (min-width: 900px) { .nf-two { grid-template-columns: minmax(0,2fr) minmax(0,1fr) } }
           `}</style>
@@ -64,7 +64,7 @@ export default function App2() {
             ))}
             <div style={{ marginTop: 'auto', display: 'grid', gap: 8 }}>
               <span className="pill paper">PAPER TRADING · no proven edge</span>
-              <a href="#" className="muted" style={{ fontSize: '.8rem' }}>Open the classic dashboard</a>
+              <a href="?view=classic" className="muted" style={{ fontSize: '.8rem' }}>Classic view</a>
             </div>
           </aside>
 
@@ -75,6 +75,10 @@ export default function App2() {
             {view === 'today' && <TodayView d={d} gated={gated} all={all} open={open} onSelect={setSelected} />}
             {view === 'positions' && <PositionsView open={open} livePnl={d.livePnl} isToday={d.isToday} onSelect={setSelected} now={now} />}
             {view === 'history' && <HistoryView gated={gated} all={all} heatmap={d.heatmap} date={date} setDate={setDate} onSelect={setSelected} />}
+            {/* below 1024px the sidebar (and its link) is hidden */}
+            <footer className="nf-foot" style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+              <a href="?view=classic" className="muted" style={{ fontSize: '.8rem' }}>Classic view</a>
+            </footer>
           </main>
         </div>
 

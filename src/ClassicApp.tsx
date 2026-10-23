@@ -619,6 +619,7 @@ export default function App() {
           <Activity className="w-8 h-8 text-blue-500" />
           <h1 className="text-xl font-bold tracking-wide">Ninefifteen</h1>
         </div>
+        <a href="/" className="-mt-7 mb-8 text-xs text-blue-400 hover:text-blue-300">Back to new dashboard</a>
 
         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">General</div>
         <nav className="flex-1 space-y-1">
@@ -674,7 +675,7 @@ export default function App() {
               <div className="w-10 h-10 rounded-full bg-blue-900 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold shrink-0">N</div>
               <div>
                 <div className="text-sm font-semibold text-white">Ninefifteen</div>
-                <div className="text-[10px] text-gray-400">Paper Trading Mode</div>
+                <div className="text-[10px] text-gray-400">Paper Trading Mode · <a href="/" className="text-blue-400 hover:text-blue-300">Back to new dashboard</a></div>
               </div>
             </div>
             <button className="w-10 h-10 rounded-xl bg-[#141416] border border-[#222225] flex items-center justify-center hover:text-white transition-colors shrink-0 lg:hidden">
