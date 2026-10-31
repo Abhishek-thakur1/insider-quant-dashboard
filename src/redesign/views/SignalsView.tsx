@@ -3,14 +3,13 @@
 import { useMemo } from 'react'
 import { CheckCircle2, CircleAlert, Send, XCircle, Zap } from 'lucide-react'
 import { FunnelChart, HeatTiles, SignalTimeline } from '../charts'
-import { ALL, useSignals, type Trade } from '../data'
+import { ALL, type Loadable, type Trade } from '../data'
 import { istTime, shortSymbol } from '../format.ts'
 import { funnel, heatTiles, type SignalRow } from '../logic.ts'
 import { Reveal } from '../motion'
 import { Empty, SideChip, ViewSkeleton } from '../ui'
 
-export default function SignalsView({ date, isToday, query, detector, trades }: { date: string; isToday: boolean; query: string; detector: string; trades: Trade[] }) {
-  const s = useSignals(date, isToday)
+export default function SignalsView({ signals: s, date, isToday, query, detector, trades }: { signals: Loadable<SignalRow[]>; date: string; isToday: boolean; query: string; detector: string; trades: Trade[] }) {
   const rows = useMemo(() => (s.data ?? []).filter((r) => (detector === ALL || r.detector === detector) && (!query || r.symbol.toLowerCase().includes(query) || r.detector.toLowerCase().includes(query))), [s.data, detector, query])
   const f = useMemo(() => funnel(rows), [rows])
   const tiles = useMemo(() => heatTiles(rows, trades.filter((t) => detector === ALL || t.detectorName === detector)), [rows, trades, detector])

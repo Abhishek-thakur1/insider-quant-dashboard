@@ -2,6 +2,16 @@
 
 Newest first.
 
+## 2026-10-23: Today separates alerted from recorded-only trades (`fix/closed-today-split`)
+- **Why:** owner report. "Closed today" mixed alerted trades with recorded-only ones, and readers took them all as trades taken.
+- **Two sections:** "Alerted trades (sent to Telegram)" first, beside Open positions; then "Recorded only (rejected by the filter, paper)", with a one-line explanation.
+- **What counts as alerted:** the signal log (`/api/signals`, `alerted`) decides. Trades older than the log (it starts 21 Oct) fall back to the trade's filter-passed flag.
+- **Recorded-only rows:** they show why the trade wasn't alerted, from its signal row: `score 76 < 78`, `EV gate`, `Regime gate`, `Filter error` or `Passed, not sent: <reason>`. With no matching signal, the row says `Not alerted`. The default chip elsewhere is "not alerted" instead of "recorded".
+- **Stat cards:** "Alerted P&L · paper" (now computed from the alerted trades), "All recorded (paper)" with "n=N, too small to mean anything" below n=30, and "Win rate · alerted".
+- **Alerted empty state:** "No alerts today. The filter rejected N of N signals."
+- **Signals:** now fetched once in `App2` and shared with the Signals view.
+- **Tests:** `wasAlerted`, `signalsByTrade` and `notAlertedReason` in `logic.ts`, with 2 new tests (26 in total). First-load JS 140.1 kB gzipped (+0.7 kB).
+
 ## 2026-10-23: UI polish stage 2, part 3: accessibility and quality (`feat/ui-stage2`; preview only, not merged)
 - **Contrast:** every text token is ≥ 4.5:1 on every surface in both themes (light gain `#126f63`; the faint tokens raised).
 - **Touch targets:** the segmented toggles are now 44 px.

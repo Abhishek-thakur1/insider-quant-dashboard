@@ -97,6 +97,32 @@ export const heatTiles = (signals: SignalRow[], trades: Trade[]): Tile[] => {
   return [...m.values()].sort((a, b) => (b.retPct ?? -Infinity) - (a.retPct ?? -Infinity) || b.fires - a.fires)
 }
 
+/** Signals by the paper-trade id they created (signals.trade_id). */
+export const signalsByTrade = (rows: SignalRow[]) => {
+  const m = new Map<number, SignalRow>()
+  for (const r of rows) if (r.tradeId != null) m.set(r.tradeId, r)
+  return m
+}
+
+/** Was this trade actually sent to Telegram? The signal log decides; trades older than the log
+ *  (it starts 2026-10-21) fall back to the trade's own filter-passed flag. */
+export const wasAlerted = (t: Pick<Trade, 'id' | 'gated'>, byTrade: Map<number, SignalRow>) => {
+  const s = byTrade.get(Number(t.id))
+  return s ? s.alerted : t.gated === true
+}
+
+/** Why a recorded trade was not alerted, from its signal row; "Not alerted" when the API has no reason. */
+export const notAlertedReason = (s: SignalRow | undefined): string => {
+  if (!s) return 'Not alerted'
+  if (s.outcome === 'ERROR') return 'Filter error'
+  if (s.outcome === 'PASSED') return s.suppressedReason ? `Passed, not sent: ${s.suppressedReason.toLowerCase().replace(/_/g, ' ')}` : 'Passed, not sent'
+  const gate = (s.rejectedAt ?? '').toUpperCase()
+  if (gate === 'EV') return 'EV gate'
+  if (gate === 'REGIME') return 'Regime gate'
+  if (s.score != null && s.threshold != null && s.score < s.threshold) return `score ${s.score} < ${s.threshold}`
+  return gate ? `${gate.toLowerCase()} gate` : 'Not alerted'
+}
+
 /** Min/max with padding for chart scales; always includes 0 so the zero line is visible. */
 export const extent = (vals: number[], pad = 0.08): [number, number] => {
   if (!vals.length) return [-1, 1]

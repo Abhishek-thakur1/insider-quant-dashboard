@@ -1,7 +1,7 @@
 // Data shaping for the redesign's cards and charts (src/redesign/logic.ts).
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { byDetector, cumulative, extent, funnel, heatTiles, impliedPrice, inRange, stopToTarget, SMALL_SAMPLE } from '../src/redesign/logic.ts'
+import { byDetector, cumulative, extent, funnel, heatTiles, impliedPrice, inRange, notAlertedReason, signalsByTrade, stopToTarget, wasAlerted, SMALL_SAMPLE } from '../src/redesign/logic.ts'
 
 const trade = (o) => ({ id: 1, symbol: 'NSE:X-EQ', side: 'LONG', entryPrice: 100, timestamp: 0, detectorName: 'D', size: 10, ...o })
 
@@ -61,4 +61,25 @@ test('extent always includes zero and pads', () => {
   const [lo, hi] = extent([2, 4])
   assert.ok(lo < 0 && hi > 4)
   assert.deepEqual(extent([]), [-1, 1])
+})
+
+test('alerted vs recorded-only: the signal log decides, the gated flag is the fallback', () => {
+  const s = (o) => ({ id: 'x', firedAt: 0, symbol: 'S', detector: 'D', side: 'LONG', score: 70, threshold: 78, outcome: 'REJECTED', rejectedAt: null, regimeClass: null, marketRegime: null, alerted: false, suppressedReason: null, dataQuality: [], tradeId: null, ...o })
+  const by = signalsByTrade([s({ tradeId: 1, alerted: true, outcome: 'PASSED' }), s({ tradeId: 2 }), s({ tradeId: null })])
+  assert.equal(by.size, 2)
+  assert.equal(wasAlerted({ id: 1, gated: false }, by), true)
+  assert.equal(wasAlerted({ id: 2, gated: true }, by), false) // the log wins over the flag
+  assert.equal(wasAlerted({ id: 9, gated: true }, by), true) // no log row: fall back to gated
+  assert.equal(wasAlerted({ id: 9 }, by), false)
+})
+
+test('not-alerted reason from the signal row', () => {
+  const s = (o) => ({ id: 'x', firedAt: 0, symbol: 'S', detector: 'D', side: 'LONG', score: 76, threshold: 78, outcome: 'REJECTED', rejectedAt: null, regimeClass: null, marketRegime: null, alerted: false, suppressedReason: null, dataQuality: [], tradeId: 1, ...o })
+  assert.equal(notAlertedReason(undefined), 'Not alerted')
+  assert.equal(notAlertedReason(s({})), 'score 76 < 78')
+  assert.equal(notAlertedReason(s({ rejectedAt: 'EV', score: 85 })), 'EV gate')
+  assert.equal(notAlertedReason(s({ rejectedAt: 'REGIME' })), 'Regime gate')
+  assert.equal(notAlertedReason(s({ outcome: 'ERROR' })), 'Filter error')
+  assert.equal(notAlertedReason(s({ outcome: 'PASSED', suppressedReason: 'CAPITAL_SKIP' })), 'Passed, not sent: capital skip')
+  assert.equal(notAlertedReason(s({ score: null, threshold: null })), 'Not alerted')
 })
