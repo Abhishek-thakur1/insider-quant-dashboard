@@ -25,6 +25,17 @@ export function ViewSkeleton() {
   )
 }
 
+/** Stats leave flagged rows out by default; this says how many and lets the viewer include them. */
+export function FlaggedToggle({ include, setInclude, flagged }: { include: boolean; setInclude: (v: boolean) => void; flagged: number }) {
+  if (flagged === 0) return null
+  return (
+    <p className="muted" style={{ margin: 0, fontSize: 'var(--t-s)', display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', alignItems: 'center' }}>
+      <span>{include ? `Stats include ${flagged} flagged row${flagged === 1 ? '' : 's'} (synthetic or approximate data).` : `Stats exclude ${flagged} flagged row${flagged === 1 ? '' : 's'} (synthetic or approximate data); the lists still show them.`}</span>
+      <button className="btn" aria-pressed={include} onClick={() => setInclude(!include)}>{include ? 'Exclude flagged' : 'Include flagged'}</button>
+    </p>
+  )
+}
+
 export const SideChip = ({ side }: { side: string }) => (
   <span className={`chip ${side === 'LONG' ? 'gain' : 'loss'}`}>{side === 'LONG' ? <ArrowUpRight size={12} aria-hidden /> : <ArrowDownRight size={12} aria-hidden />}{side}</span>
 )

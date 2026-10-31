@@ -2,6 +2,12 @@
 
 Newest first.
 
+## Unreleased: stats exclude flagged rows by default (`feat/stats-exclude-flagged`, not merged)
+- **Why:** the engine audit of 31 Oct found that the API's default history includes rows the engine itself flags as invented or approximate (82 `synthetic_close` ₹0/0R closes among 404 closed alerted trades), and the dashboard counted them in its stats.
+- **What changes:** stat cards, sparklines, History KPIs, detector bars and the equity curve use unflagged rows only. An "Include flagged" toggle (remembered per browser) puts them back, and a line says how many rows are left out.
+- **Unchanged:** trade lists and CSV export still show every row and its flags; the classic view; the API (frontend only).
+- **Test:** `tests/logic.test.mjs` (`isFlagged`, `statsRows`; the curve never includes the synthetic close).
+
 ## 2026-10-23: Today separates alerted from recorded-only trades (`fix/closed-today-split`)
 - **Why:** owner report. "Closed today" mixed alerted trades with recorded-only ones, and readers took them all as trades taken.
 - **Two sections:** "Alerted trades (sent to Telegram)" first, beside Open positions; then "Recorded only (rejected by the filter, paper)", with a one-line explanation.
