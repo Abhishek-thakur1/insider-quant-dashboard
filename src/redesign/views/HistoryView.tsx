@@ -5,16 +5,20 @@ import { useMemo, useState } from 'react'
 import { DetectorBars, EquityCurve } from '../charts'
 import { calcStats, useRecentHistory, type Trade } from '../data'
 import { signedR, signedRupees, tone } from '../format.ts'
-import { byDetector } from '../logic.ts'
+import { byDetector, isFlagged, statsRows } from '../logic.ts'
 import { Reveal, Skeleton } from '../motion'
-import { Empty, TradeList } from '../ui'
+import { Empty, FlaggedToggle, TradeList } from '../ui'
 
-export default function HistoryView({ gated, all, heatmap, date, setDate, onSelect }: { gated: Trade[]; all: Trade[]; heatmap: { date: string; count: number }[]; date: string; setDate: (s: string) => void; onSelect: (t: Trade) => void }) {
+export default function HistoryView({ gated, all, heatmap, date, setDate, onSelect, includeFlagged, setIncludeFlagged }: { gated: Trade[]; all: Trade[]; heatmap: { date: string; count: number }[]; date: string; setDate: (s: string) => void; onSelect: (t: Trade) => void; includeFlagged: boolean; setIncludeFlagged: (v: boolean) => void }) {
   const [scope, setScope] = useState<'gated' | 'all'>('gated')
   const rows = scope === 'gated' ? gated : all
-  const s = calcStats(rows)
-  const det = useMemo(() => byDetector(rows), [rows])
+  // KPIs, detector bars and the equity curve use unflagged rows by default; the list and CSV keep every row.
+  const kept = useMemo(() => statsRows(rows, includeFlagged), [rows, includeFlagged])
+  const s = calcStats(kept)
+  const det = useMemo(() => byDetector(kept), [kept])
   const recent = useRecentHistory(scope === 'gated')
+  const recentKept = useMemo(() => statsRows(recent.data ?? [], includeFlagged), [recent.data, includeFlagged])
+  const flaggedCount = new Set([...rows, ...(recent.data ?? [])].filter(isFlagged).map((t) => t.id)).size
   const exportCsv = () => {
     const head = ['Symbol', 'Side', 'Duration', 'Entry Time', 'Exit Time', 'Detector', 'Regime', 'Gated', 'Capital Gated', 'Unconstrained Size', 'Actual Size', 'Entry Price', 'Exit Price', 'PnL', 'R-Multiple', 'Exit Reason']
     const lines = rows.map((t) => [t.symbol, t.side, t.durationClass || 'INTRADAY', new Date(t.timestamp).toISOString(), t.exitTimestamp ? new Date(t.exitTimestamp).toISOString() : '', t.detectorName, t.regimeClass || 'UNIVERSAL', t.gated ? 'YES' : 'NO', t.capitalGated ? 'YES' : 'NO', t.size, t.actualSize ?? t.size, t.entryPrice, t.exitPrice ?? '', t.pnl ?? 0, t.r_multiple ?? '', t.exitReason ?? ''].join(','))
@@ -39,6 +43,7 @@ export default function HistoryView({ gated, all, heatmap, date, setDate, onSele
         </div>
         {rows.length > 0 && <button className="btn" onClick={exportCsv}>Export CSV</button>}
       </div>
+      <FlaggedToggle include={includeFlagged} setInclude={setIncludeFlagged} flagged={flaggedCount} />
       <div className="nf-grid">{kpis.map((k, i) => (
         <Reveal key={k.label} i={i} className="card" style={{ display: 'grid', gap: 6 }}>
           <span className="lbl">{k.label}</span><span className={`num ${k.cls}`} style={{ fontSize: 'var(--t-2xl)' }}>{k.value}</span><span className="muted" style={{ fontSize: 'var(--t-s)' }}>{k.sub}</span>
@@ -49,7 +54,7 @@ export default function HistoryView({ gated, all, heatmap, date, setDate, onSele
           <div className="card-head" style={{ marginBottom: 0 }}><h2 id="h-curve">Equity curve · paper</h2><span className="chip">{scope === 'gated' ? 'alerted' : 'all recorded'}</span></div>
           {recent.loading && !recent.data ? <Skeleton h={260} r={14} />
             : recent.error && !recent.data ? <Empty icon={<span>!</span>} text="Couldn't load recent history." sub={recent.error} />
-              : <EquityCurve trades={recent.data ?? []} note={`Latest ${recent.data?.length ?? 0} closed trades across days (the API returns at most 200; a longer history needs an API change, request listed). Ranges count back from the latest trade.`} />}
+              : <EquityCurve trades={recentKept} note={`Latest ${recentKept.length} closed trades across days${includeFlagged ? '' : `, flagged rows left out (${(recent.data?.length ?? 0) - recentKept.length})`} (the API returns at most 200; a longer history needs an API change, request listed). Ranges count back from the latest trade.`} />}
         </section>
         <section className="card" aria-labelledby="h-det">
           <div className="card-head"><h2 id="h-det">By detector, {date}</h2><span className="chip">n = {s.total}</span></div>
