@@ -224,7 +224,7 @@ function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect, includeF
       </div>
       <section className="card" aria-labelledby="t-recorded">
         <div className="card-head"><h2 id="t-recorded">Recorded only (rejected by the filter, paper)</h2><span className="chip">{recorded.length}</span></div>
-        <p className="muted" style={{ margin: '0 0 var(--s3)', fontSize: 'var(--t-s)' }}>Every detector fire is recorded as a simulated paper trade, including fires the filter rejected. These were never sent as alerts and were not taken.</p>
+        <p className="muted" style={{ margin: '0 0 var(--s3)', fontSize: 'var(--t-s)' }}>Fires rejected by the score filter are still recorded as paper trades, but they were not alerted and were not taken. Fires that passed but weren't sent (for example a capital skip) are recorded as skipped paper trades. EV-gate rejections are not paper trades: they are logged separately, in the EV shadow.</p>
         <TradeList trades={recorded} onSelect={onSelect} tag={(t) => <span className="chip loss"><XCircle size={12} aria-hidden /> {notAlertedReason(byTrade.get(Number(t.id)))}</span>}
           empty={<Empty icon={<Clock size={20} />} text={`No recorded-only trades closed ${day}.`} />} />
       </section>
