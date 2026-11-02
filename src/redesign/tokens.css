@@ -97,6 +97,8 @@
   .nf-side { display: flex; flex-direction: column; gap: var(--s1); padding: var(--s5); border-right: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(14px); position: sticky; top: 0; height: 100dvh }
   .nf-side .navbtn { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border-radius: var(--r-m); border: 1px solid transparent; background: transparent; color: var(--muted); font: 600 var(--t-m) var(--body); cursor: pointer; text-align: left }
   .nf-side .navbtn:hover { color: var(--fg); background: var(--surface-2) }
+  /* The paper badge wraps inside the 236 px sidebar instead of overflowing its edge (pill is nowrap elsewhere). */
+  .nf-side .pill.paper { display: block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; letter-spacing: 0; line-height: 1.35; padding: 6px 10px; border-radius: var(--r-m) }
   .nf-side .navbtn[aria-current="page"] { color: var(--fg); background: var(--accent-bg); border-color: color-mix(in srgb, var(--accent) 35%, transparent) }
   .nf-main { padding: var(--s6) var(--s8) var(--s10) }
   .nf-bottom, .nf-foot { display: none !important }
