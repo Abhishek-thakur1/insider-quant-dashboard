@@ -4,6 +4,13 @@ import type { Trade } from './data.ts'
 
 export const SMALL_SAMPLE = 30
 
+/** A row with any data-quality flag (synthetic close, pre-sizing approximation, index proxy, …).
+ *  The engine records why a row is suspect; stats leave such rows out unless the viewer opts in. */
+export const isFlagged = (t: { dataQuality?: string[] }) => (t.dataQuality ?? []).length > 0
+/** The rows that feed stats and charts: unflagged only by default (owner, 31 Oct). Lists still show all rows. */
+export const statsRows = <T extends { dataQuality?: string[] }>(rows: T[], includeFlagged: boolean): T[] =>
+  includeFlagged ? rows : rows.filter((t) => !isFlagged(t))
+
 /** One row of GET /api/signals (engine PR #24). */
 export interface SignalRow {
   id: string; firedAt: number; symbol: string; detector: string; side: string

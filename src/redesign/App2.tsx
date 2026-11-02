@@ -6,9 +6,9 @@ import { MotionConfig, AnimatePresence, motion } from 'framer-motion'
 import { Activity, AlertTriangle, CalendarDays, CircleSlash, Clock, History as HistoryIcon, LayoutDashboard, Layers, Moon, Radio, Search, Send, Sun, WifiOff, X, XCircle, Zap } from 'lucide-react'
 import { ALL, calcStats, todayStr, tradeKey, useDashboardData, useHealth, useSignals, type Trade } from './data'
 import { ago, clock, istParts, pct, rupees, secondsToSquareOff, shortSymbol, signedR, signedRupees, tone } from './format.ts'
-import { cumulative, impliedPrice, notAlertedReason, signalsByTrade, stopToTarget, wasAlerted, type SignalRow } from './logic.ts'
+import { cumulative, impliedPrice, isFlagged, notAlertedReason, signalsByTrade, statsRows, stopToTarget, wasAlerted, type SignalRow } from './logic.ts'
 import { CountUp, Flash, Reveal } from './motion'
-import { Empty, SideChip, TradeList, ViewSkeleton } from './ui'
+import { Empty, FlaggedToggle, SideChip, TradeList, ViewSkeleton } from './ui'
 import { Sparkline } from './Sparkline'
 import './tokens.css'
 
@@ -31,6 +31,8 @@ const savePref = (k: string, v: string) => { try { localStorage.setItem(k, v) } 
 export default function App2() {
   const [view, setView] = useState<View>(() => { const v = loadPref('nf:view', 'today') as View; return VIEWS.some((x) => x.id === v) ? v : 'today' })
   const [theme, setTheme] = useState(() => loadPref('nf:theme', 'dark'))
+  // Stats leave out rows with data-quality flags unless the viewer opts in (owner, 31 Oct).
+  const [includeFlagged, setIncludeFlagged] = useState(() => loadPref('nf:includeFlagged', 'false') === 'true')
   const [date, setDate] = useState(todayStr())
   const [detector, setDetector] = useState(ALL)
   const [query, setQuery] = useState('')
@@ -42,6 +44,7 @@ export default function App2() {
 
   useEffect(() => { savePref('nf:view', view) }, [view])
   useEffect(() => { savePref('nf:theme', theme) }, [theme])
+  useEffect(() => { savePref('nf:includeFlagged', String(includeFlagged)) }, [includeFlagged])
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
 
   const q = query.trim().toLowerCase()
@@ -79,10 +82,10 @@ export default function App2() {
             <StateBanner market={ist.market} weekend={ist.weekend} stream={d.stream} isToday={d.isToday} error={d.error} />
             {view !== 'health' && <Controls date={date} setDate={setDate} detector={detector} setDetector={setDetector} detectors={d.detectors} query={query} setQuery={setQuery} isToday={d.isToday} />}
             <Suspense fallback={<ViewSkeleton />}>
-              {view === 'today' && <TodayView d={d} all={all} open={open} fires={dayFires} signalsLoaded={!!signals.data} now={now} onSelect={setSelected} />}
+              {view === 'today' && <TodayView d={d} all={all} open={open} fires={dayFires} signalsLoaded={!!signals.data} now={now} onSelect={setSelected} includeFlagged={includeFlagged} setIncludeFlagged={setIncludeFlagged} />}
               {view === 'positions' && <PositionsView open={open} livePnl={d.livePnl} isToday={d.isToday} loading={d.loading} onSelect={setSelected} now={now} />}
               {view === 'signals' && <SignalsView signals={signals} date={date} isToday={d.isToday} query={q} detector={detector} trades={d.allHistory} />}
-              {view === 'history' && <HistoryView gated={gated} all={all} heatmap={d.heatmap} date={date} setDate={setDate} onSelect={setSelected} />}
+              {view === 'history' && <HistoryView gated={gated} all={all} heatmap={d.heatmap} date={date} setDate={setDate} onSelect={setSelected} includeFlagged={includeFlagged} setIncludeFlagged={setIncludeFlagged} />}
               {view === 'health' && <HealthView health={health} stream={d.stream} updatedAt={d.updatedAt} now={now} market={ist.market} />}
             </Suspense>
             <footer className="nf-foot">
@@ -176,14 +179,16 @@ function StatCard({ label, value, format, sub, spark, sparkLabel, i, valueTone }
   )
 }
 
-function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect }: { d: ReturnType<typeof useDashboardData>; all: Trade[]; open: Trade[]; fires: SignalRow[]; signalsLoaded: boolean; now: number; onSelect: (t: Trade) => void }) {
+function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect, includeFlagged, setIncludeFlagged }: { d: ReturnType<typeof useDashboardData>; all: Trade[]; open: Trade[]; fires: SignalRow[]; signalsLoaded: boolean; now: number; onSelect: (t: Trade) => void; includeFlagged: boolean; setIncludeFlagged: (v: boolean) => void }) {
   // Alerted = actually sent to Telegram (signal log); recorded-only = every other paper trade.
   const byTrade = useMemo(() => signalsByTrade(fires), [fires])
   const alerted = useMemo(() => all.filter((t) => wasAlerted(t, byTrade)), [all, byTrade])
   const recorded = useMemo(() => all.filter((t) => !wasAlerted(t, byTrade)), [all, byTrade])
-  const g = calcStats(alerted), a = calcStats(all)
+  // Stats and sparklines use unflagged rows unless the viewer includes flagged ones; the lists show every row.
+  const alertedStats = statsRows(alerted, includeFlagged), allStats = statsRows(all, includeFlagged)
+  const g = calcStats(alertedStats), a = calcStats(allStats)
   const unreal = open.reduce((s, t) => s + (d.livePnl[t.symbol] ?? 0), 0)
-  const flagged = all.filter((t) => (t.dataQuality ?? []).length > 0)
+  const flagged = all.filter(isFlagged)
   const flags = [...new Set(flagged.flatMap((t) => t.dataQuality ?? []))]
   const rejected = fires.filter((r) => r.outcome === 'REJECTED').length
   const day = d.isToday ? 'today' : 'on this date'
@@ -191,9 +196,9 @@ function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect }: { d: R
   return (
     <>
       <div className="nf-grid" role="group" aria-label="Paper P&L">
-        <StatCard i={0} label="Alerted P&L · paper" value={g.pnl} format={signedRupees} spark={cumulative(alerted, 'pnl')} sparkLabel="Alerted cumulative P&L"
+        <StatCard i={0} label="Alerted P&L · paper" value={g.pnl} format={signedRupees} spark={cumulative(alertedStats, 'pnl')} sparkLabel="Alerted cumulative P&L"
           sub={g.total ? <>{signedR(g.totalR)} · {g.total} trade{g.total === 1 ? '' : 's'} · best {g.best === null ? '—' : signedR(g.best)} · worst {g.worst === null ? '—' : signedR(g.worst)}</> : `No alerted trades closed ${day}`} />
-        <StatCard i={1} label="All recorded (paper)" value={a.pnl} format={signedRupees} spark={cumulative(all, 'pnl')} sparkLabel="All recorded cumulative P&L"
+        <StatCard i={1} label="All recorded (paper)" value={a.pnl} format={signedRupees} spark={cumulative(allStats, 'pnl')} sparkLabel="All recorded cumulative P&L"
           sub={a.total < 30 ? `n=${a.total}, too small to mean anything` : `n=${a.total}`} />
         <StatCard i={2} label="Win rate · alerted" value={g.total ? g.winRate : null} format={(n) => pct(n)} valueTone="accent"
           sub={g.total ? <>{g.wins} of {g.total}{g.total < 30 ? ' · small sample, not an edge' : ''}</> : 'no closed alerted trades'} />
@@ -201,8 +206,9 @@ function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect }: { d: R
           sub={d.isToday ? <>unrealized <span className={`num ${tone(unreal)}`}>{signedRupees(unreal)}</span></> : 'only shown for today'} />
       </div>
       {flagged.length > 0 && (
-        <p className="muted" style={{ margin: 0, fontSize: 'var(--t-s)' }}><AlertTriangle size={13} aria-hidden className="warn" /> {flagged.length} of {all.length} rows carry data-quality flags ({flags.join(', ')}). They are included in the totals above.</p>
+        <p className="muted" style={{ margin: 0, fontSize: 'var(--t-s)' }}><AlertTriangle size={13} aria-hidden className="warn" /> {flagged.length} of {all.length} rows carry data-quality flags ({flags.join(', ')}).</p>
       )}
+      <FlaggedToggle include={includeFlagged} setInclude={setIncludeFlagged} flagged={flagged.length} />
       <div className="nf-two">
         <section className="card" aria-labelledby="t-alerted">
           <div className="card-head"><h2 id="t-alerted">Alerted trades (sent to Telegram)</h2><span className="chip accent">{alerted.length}</span></div>

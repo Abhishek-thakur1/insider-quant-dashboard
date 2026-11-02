@@ -32,6 +32,7 @@ The routes use a query string and a hash only, never a path. `vercel.json` has n
 **Rules:**
 - Real data only; a view that needs data the API lacks says so and lists an API request.
 - Every P&L view says paper.
+- **Flagged rows stay out of stats by default** (owner, 31 Oct). A row with any `dataQuality` flag (e.g. `synthetic_close`, `pre_sizing_approx`, `index_option_proxy`) is left out of the stat cards, sparklines, History KPIs, detector bars and the equity curve (`statsRows` / `isFlagged` in `logic.ts`). An "Include flagged" toggle (`FlaggedToggle` in `ui.tsx`, saved as `nf:includeFlagged`) brings them back. Trade lists and the CSV export always show every row with its flags. The classic view is unchanged.
 - No external network calls; fonts are bundled.
 - Charts are hand-built SVG. Recharts is used only by the classic view, so it's bundled only into the classic chunk.
 - **API requests (not done here):**

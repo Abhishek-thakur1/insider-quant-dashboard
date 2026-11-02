@@ -1,9 +1,23 @@
 // Data shaping for the redesign's cards and charts (src/redesign/logic.ts).
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { byDetector, cumulative, extent, funnel, heatTiles, impliedPrice, inRange, notAlertedReason, signalsByTrade, stopToTarget, wasAlerted, SMALL_SAMPLE } from '../src/redesign/logic.ts'
+import { byDetector, cumulative, extent, funnel, heatTiles, impliedPrice, inRange, isFlagged, notAlertedReason, signalsByTrade, statsRows, stopToTarget, wasAlerted, SMALL_SAMPLE } from '../src/redesign/logic.ts'
 
 const trade = (o) => ({ id: 1, symbol: 'NSE:X-EQ', side: 'LONG', entryPrice: 100, timestamp: 0, detectorName: 'D', size: 10, ...o })
+
+test('stats leave flagged rows out by default; including them returns every row (owner, 31 Oct)', () => {
+  const clean = trade({ id: 1, pnl: 10, r_multiple: 1, exitTimestamp: 1000, dataQuality: [] })
+  const noField = trade({ id: 2, pnl: 5, r_multiple: 0.5, exitTimestamp: 2000 })
+  const synthetic = trade({ id: 3, pnl: 0, r_multiple: 0, exitTimestamp: 1500, dataQuality: ['synthetic_close'] })
+  const approx = trade({ id: 4, pnl: -20, r_multiple: -1, exitTimestamp: 1800, dataQuality: ['pre_sizing_approx', 'duration_unverified'] })
+  const rows = [clean, noField, synthetic, approx]
+  assert.deepEqual(rows.map(isFlagged), [false, false, true, true])
+  assert.deepEqual(statsRows(rows, false).map((t) => t.id), [1, 2])
+  assert.equal(statsRows(rows, true), rows, 'opt-in: the same rows, nothing dropped')
+  assert.deepEqual(statsRows([], false), [])
+  // the cumulative curve built from the default rows never includes the synthetic 0R close
+  assert.deepEqual(cumulative(statsRows(rows, false), 'r').map((p) => p.v), [1, 1.5])
+})
 
 test('stop-to-target progress is clamped and null when a level is missing', () => {
   assert.equal(stopToTarget({ stopLoss: 90, target: 110 }, 100), 50)
