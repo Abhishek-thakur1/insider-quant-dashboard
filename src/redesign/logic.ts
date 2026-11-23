@@ -118,6 +118,31 @@ export const wasAlerted = (t: Pick<Trade, 'id' | 'gated'>, byTrade: Map<number, 
   return s ? s.alerted : t.gated === true
 }
 
+/** The day's alerted trades: closed ones plus those still open (owner, 23 Nov). An open row is dropped
+ *  when a closed row has the same id, or the same symbol and entry time (a live-stream row carries
+ *  a different id from the REST row); the closed row wins. `open` holds the still-open rows. */
+export const alertedTrades = (closed: Trade[], openNow: Trade[], byTrade: Map<number, SignalRow>) => {
+  const ids = new Set(closed.map((t) => String(t.id)))
+  const keys = new Set(closed.map((t) => `${t.symbol}@${t.timestamp}`))
+  const open = new Set<Trade>()
+  for (const t of openNow) {
+    const id = String(t.id), key = `${t.symbol}@${t.timestamp}`
+    if (ids.has(id) || keys.has(key)) continue
+    ids.add(id); keys.add(key)
+    if (wasAlerted(t, byTrade)) open.add(t)
+  }
+  return { list: [...open, ...closed.filter((t) => wasAlerted(t, byTrade))], open }
+}
+
+/** Alerts actually sent (signal log, alerted = true) and the card's summary line, e.g.
+ *  "2 alerts sent today, 2 still open". `text` is null when nothing was sent. */
+export const alertSummary = (fires: SignalRow[], openAlerted: number, day: string) => {
+  const sent = fires.filter((r) => r.alerted).length
+  if (!sent) return { sent, text: null }
+  const tail = openAlerted > 0 ? `, ${openAlerted} still open` : ''
+  return { sent, text: `${sent} ${sent === 1 ? 'alert' : 'alerts'} sent ${day}${tail}` }
+}
+
 /** Why a recorded trade was not alerted, from its signal row; "Not alerted" when the API has no reason. */
 export const notAlertedReason = (s: SignalRow | undefined): string => {
   if (!s) return 'Not alerted'

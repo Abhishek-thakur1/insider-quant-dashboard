@@ -56,7 +56,7 @@ export function TradeList({ trades, onSelect, empty, tag }: { trades: Trade[]; o
               <span className="muted" style={{ fontSize: 'var(--t-xs)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.detectorName} · {istTime(t.timestamp)}{t.exitReason ? ` · ${t.exitReason}` : ''}</span>
             </span>
             <span style={{ textAlign: 'right', display: 'grid' }}>
-              <span className={`num ${tone(t.pnl ?? 0)}`}>{signedRupees(t.pnl ?? 0)}</span>
+              {typeof t.pnl === 'number' ? <span className={`num ${tone(t.pnl)}`}>{signedRupees(t.pnl)}</span> : <span className="muted" style={{ fontSize: 'var(--t-s)' }}>open</span>}
               {typeof t.r_multiple === 'number' && <span className={`num ${tone(t.r_multiple)}`} style={{ fontSize: 'var(--t-xs)' }}>{signedR(t.r_multiple)}</span>}
             </span>
           </button>
