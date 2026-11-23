@@ -195,9 +195,10 @@ function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect, includeF
   const flags = [...new Set(flagged.flatMap((t) => t.dataQuality ?? []))]
   const rejected = fires.filter((r) => r.outcome === 'REJECTED').length
   const day = d.isToday ? 'today' : 'on this date'
-  // The count chip and summary come from the signal log once it has loaded; until then, the list.
+  // The count chip and summary come from the signal log once it has loaded and has rows; until then,
+  // or for dates before the log began (21 Oct), the list.
   const summary = alertSummary(fires, al.open.size, day)
-  const chip = signalsLoaded ? summary.sent : alerted.length
+  const chip = signalsLoaded && fires.length ? summary.sent : alerted.length
   if (d.loading && !d.updatedAt) return <ViewSkeleton />
   return (
     <>
