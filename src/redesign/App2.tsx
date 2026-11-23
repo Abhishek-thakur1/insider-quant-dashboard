@@ -6,7 +6,7 @@ import { MotionConfig, AnimatePresence, motion } from 'framer-motion'
 import { Activity, AlertTriangle, CalendarDays, CircleSlash, Clock, History as HistoryIcon, LayoutDashboard, Layers, Moon, Radio, Search, Send, Sun, WifiOff, X, XCircle, Zap } from 'lucide-react'
 import { ALL, calcStats, todayStr, tradeKey, useDashboardData, useHealth, useSignals, type Trade } from './data'
 import { ago, clock, istParts, pct, rupees, secondsToSquareOff, shortSymbol, signedR, signedRupees, tone } from './format.ts'
-import { cumulative, impliedPrice, isFlagged, notAlertedReason, signalsByTrade, statsRows, stopToTarget, wasAlerted, type SignalRow } from './logic.ts'
+import { alertedTrades, alertSummary, cumulative, impliedPrice, isFlagged, notAlertedReason, signalsByTrade, statsRows, stopToTarget, wasAlerted, type SignalRow } from './logic.ts'
 import { CountUp, Flash, Reveal } from './motion'
 import { Empty, FlaggedToggle, SideChip, TradeList, ViewSkeleton } from './ui'
 import { Sparkline } from './Sparkline'
@@ -180,18 +180,25 @@ function StatCard({ label, value, format, sub, spark, sparkLabel, i, valueTone }
 }
 
 function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect, includeFlagged, setIncludeFlagged }: { d: ReturnType<typeof useDashboardData>; all: Trade[]; open: Trade[]; fires: SignalRow[]; signalsLoaded: boolean; now: number; onSelect: (t: Trade) => void; includeFlagged: boolean; setIncludeFlagged: (v: boolean) => void }) {
-  // Alerted = actually sent to Telegram (signal log); recorded-only = every other paper trade.
+  // Alerted = actually sent to Telegram (signal log): today's open trades plus closed ones (owner, 23 Nov).
+  // Recorded-only = every other closed paper trade. Win rate, R and P&L stay closed-only.
   const byTrade = useMemo(() => signalsByTrade(fires), [fires])
-  const alerted = useMemo(() => all.filter((t) => wasAlerted(t, byTrade)), [all, byTrade])
+  const al = useMemo(() => alertedTrades(all, d.isToday ? open : [], byTrade), [all, open, d.isToday, byTrade])
+  const alerted = al.list
+  const alertedClosed = useMemo(() => all.filter((t) => wasAlerted(t, byTrade)), [all, byTrade])
   const recorded = useMemo(() => all.filter((t) => !wasAlerted(t, byTrade)), [all, byTrade])
   // Stats and sparklines use unflagged rows unless the viewer includes flagged ones; the lists show every row.
-  const alertedStats = statsRows(alerted, includeFlagged), allStats = statsRows(all, includeFlagged)
+  const alertedStats = statsRows(alertedClosed, includeFlagged), allStats = statsRows(all, includeFlagged)
   const g = calcStats(alertedStats), a = calcStats(allStats)
   const unreal = open.reduce((s, t) => s + (d.livePnl[t.symbol] ?? 0), 0)
   const flagged = all.filter(isFlagged)
   const flags = [...new Set(flagged.flatMap((t) => t.dataQuality ?? []))]
   const rejected = fires.filter((r) => r.outcome === 'REJECTED').length
   const day = d.isToday ? 'today' : 'on this date'
+  // The count chip and summary come from the signal log once it has loaded and has rows; until then,
+  // or for dates before the log began (21 Oct), the list.
+  const summary = alertSummary(fires, al.open.size, day)
+  const chip = signalsLoaded && fires.length ? summary.sent : alerted.length
   if (d.loading && !d.updatedAt) return <ViewSkeleton />
   return (
     <>
@@ -211,9 +218,12 @@ function TodayView({ d, all, open, fires, signalsLoaded, now, onSelect, includeF
       <FlaggedToggle include={includeFlagged} setInclude={setIncludeFlagged} flagged={flagged.length} />
       <div className="nf-two">
         <section className="card" aria-labelledby="t-alerted">
-          <div className="card-head"><h2 id="t-alerted">Alerted trades (sent to Telegram)</h2><span className="chip accent">{alerted.length}</span></div>
-          <TradeList trades={alerted} onSelect={onSelect} tag={() => <span className="chip accent"><Send size={12} aria-hidden /> alerted</span>}
-            empty={<Empty icon={<Send size={20} />} text={`No alerts ${day}.${signalsLoaded && fires.length ? ` The filter rejected ${rejected} of ${fires.length} signals.` : ''}`} sub={recorded.length ? 'The trades below were recorded on paper only.' : undefined} />} />
+          <div className="card-head"><h2 id="t-alerted">Alerted trades (sent to Telegram)</h2><span className="chip accent">{chip}</span></div>
+          {signalsLoaded && summary.text && alerted.length > 0 && <p className="muted" style={{ margin: '0 0 var(--s3)', fontSize: 'var(--t-s)' }}>{summary.text}.</p>}
+          <TradeList trades={alerted} onSelect={onSelect} tag={(t) => <><span className="chip accent"><Send size={12} aria-hidden /> alerted</span>{al.open.has(t) && <span className="chip">open</span>}</>}
+            empty={<Empty icon={<Send size={20} />}
+              text={signalsLoaded && summary.text ? `${summary.text}; no matching paper trade to show.` : `No alerts ${day}.${signalsLoaded && fires.length ? ` The filter rejected ${rejected} of ${fires.length} signals.` : ''}`}
+              sub={recorded.length ? 'The trades below were recorded on paper only.' : undefined} />} />
         </section>
         <section className="card" aria-labelledby="t-open">
           <div className="card-head"><h2 id="t-open">Open positions</h2><span className="chip">{open.length}</span></div>

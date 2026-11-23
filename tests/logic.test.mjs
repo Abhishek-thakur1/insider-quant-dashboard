@@ -1,7 +1,7 @@
 // Data shaping for the redesign's cards and charts (src/redesign/logic.ts).
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { byDetector, cumulative, extent, funnel, heatTiles, impliedPrice, inRange, isFlagged, notAlertedReason, signalsByTrade, statsRows, stopToTarget, wasAlerted, SMALL_SAMPLE } from '../src/redesign/logic.ts'
+import { alertedTrades, alertSummary, byDetector, cumulative, extent, funnel, heatTiles, impliedPrice, inRange, isFlagged, notAlertedReason, signalsByTrade, statsRows, stopToTarget, wasAlerted, SMALL_SAMPLE } from '../src/redesign/logic.ts'
 
 const trade = (o) => ({ id: 1, symbol: 'NSE:X-EQ', side: 'LONG', entryPrice: 100, timestamp: 0, detectorName: 'D', size: 10, ...o })
 
@@ -85,6 +85,43 @@ test('alerted vs recorded-only: the signal log decides, the gated flag is the fa
   assert.equal(wasAlerted({ id: 2, gated: true }, by), false) // the log wins over the flag
   assert.equal(wasAlerted({ id: 9, gated: true }, by), true) // no log row: fall back to gated
   assert.equal(wasAlerted({ id: 9 }, by), false)
+})
+
+test('alerted list = open + closed, deduped, open ones marked; stats stay closed-only (owner, 23 Nov)', () => {
+  const s = (o) => ({ id: 'x', firedAt: 0, symbol: 'S', detector: 'D', side: 'SHORT', score: 62, threshold: 78, outcome: 'REJECTED', rejectedAt: 'SCORE', regimeClass: null, marketRegime: null, alerted: false, suppressedReason: null, dataQuality: [], tradeId: null, ...o })
+  // the shape of 23 Nov at 12:55 IST: 2 alerted (both open), 6 recorded-only open, 0 closed
+  const fires = [
+    s({ tradeId: 2280 }), s({ tradeId: 2281 }), s({ tradeId: 2282 }), s({ tradeId: 2283, alerted: true, outcome: 'PASSED', score: 80 }),
+    s({ tradeId: 2284 }), s({ tradeId: 2285, alerted: true, outcome: 'PASSED', score: 85 }), s({ tradeId: 2286 }), s({ tradeId: 2287 }),
+    s({ rejectedAt: 'EV' }), s({ rejectedAt: 'EV' }), s({ rejectedAt: 'EV' }), s({ rejectedAt: 'EV' }), s({ rejectedAt: 'EV' }), s({ rejectedAt: 'EV' }),
+  ]
+  const by = signalsByTrade(fires)
+  const open = [2287, 2286, 2285, 2284, 2283, 2282, 2281, 2280].map((id) => trade({ id, symbol: `NSE:S${id}-EQ`, timestamp: id, gated: id === 2283 || id === 2285 }))
+  const r = alertedTrades([], open, by)
+  assert.deepEqual(r.list.map((t) => t.id), [2285, 2283])
+  assert.equal(r.open.size, 2)
+  assert.ok(r.list.every((t) => r.open.has(t)))
+  assert.deepEqual(alertSummary(fires, r.open.size, 'today'), { sent: 2, text: '2 alerts sent today, 2 still open' })
+
+  // later: 2283 has closed (REST row in history) but the open list still holds it; the closed row wins, once
+  const closed2283 = trade({ id: 2283, symbol: 'NSE:S2283-EQ', timestamp: 2283, gated: true, pnl: 120, r_multiple: 1.5, exitTimestamp: 5000 })
+  const r2 = alertedTrades([closed2283], open, by)
+  assert.deepEqual(r2.list.map((t) => t.id), [2285, 2283])
+  assert.equal(r2.list[1], closed2283)
+  assert.equal(r2.open.size, 1)
+  assert.deepEqual(alertSummary(fires, r2.open.size, 'today').text, '2 alerts sent today, 1 still open')
+  // a live-stream row (different id, same symbol + entry time) is the same trade
+  const sse = trade({ id: 'trade_2283_S', symbol: 'NSE:S2283-EQ', timestamp: 2283, gated: true })
+  assert.deepEqual(alertedTrades([closed2283], [sse], by).list, [closed2283])
+  // duplicate open rows collapse to one
+  assert.equal(alertedTrades([], [open[2], { ...open[2] }], by).list.length, 1)
+  // stats rows are built from the closed alerted trades only (no open row, no P&L)
+  assert.deepEqual(statsRows(r2.list.filter((t) => !r2.open.has(t)), false).map((t) => t.id), [2283])
+  // nothing sent: no summary; one sent and closed: no "still open"
+  assert.deepEqual(alertSummary(fires.map((f) => ({ ...f, alerted: false })), 0, 'today'), { sent: 0, text: null })
+  assert.equal(alertSummary([s({ alerted: true })], 0, 'on this date').text, '1 alert sent on this date')
+  // a recorded-only open trade never enters, even if its gated flag were set: the log decides
+  assert.equal(alertedTrades([], [trade({ id: 2284, gated: true })], by).list.length, 0)
 })
 
 test('not-alerted reason from the signal row', () => {
