@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2026-11-24: `docs/evidence/` moved to trade-workspace (`chore/move-evidence-to-workspace`)
+- **What:** the 19 stage-1 redesign screenshots and their README (`docs/evidence/stage1/`, 1.7 MB) are removed from this repo. They now live in the private trade-workspace repo at `docs/dashboard/evidence/stage1/`, with their history carried by a filtered import (owner, 24 Nov).
+- **Unchanged:** no app code, build, test or Vercel setting. Nothing in the app referenced these files.
+
 ## Unreleased: stats exclude flagged rows by default (`feat/stats-exclude-flagged`, not merged)
 - **Why:** the engine audit of 31 Oct found that the API's default history includes rows the engine itself flags as invented or approximate (82 `synthetic_close` ₹0/0R closes among 404 closed alerted trades), and the dashboard counted them in its stats.
 - **What changes:** stat cards, sparklines, History KPIs, detector bars and the equity curve use unflagged rows only. An "Include flagged" toggle (remembered per browser) puts them back, and a line says how many rows are left out.
